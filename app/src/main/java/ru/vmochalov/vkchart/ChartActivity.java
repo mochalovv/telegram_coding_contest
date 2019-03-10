@@ -6,8 +6,14 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.Toast;
 
-import ru.vmochalov.vkchart.dto.Chart;
+import org.json.JSONException;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import ru.vmochalov.vkchart.dto.CombinedChart;
 import ru.vmochalov.vkchart.view.ChartView;
+import timber.log.Timber;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
@@ -28,6 +34,7 @@ public class ChartActivity extends Activity {
         leftCheckBox = findViewById(R.id.leftCheckBox);
 
         initViews();
+
     }
 
     private void initViews() {
@@ -45,7 +52,47 @@ public class ChartActivity extends Activity {
             }
         });
 
-        chartView.setChart(Chart.getSampleChart());
+        initChart();
+    }
+
+    private void initChart() {
+
+        String json = readInputData();
+
+        try {
+            chartView.setChart(CombinedChart.parse(json));
+        } catch (JSONException ex) {
+            Timber.e("Can not parse json: " + ex.getMessage());
+        }
+
+
+    }
+
+    private String readInputData() {
+        InputStream is = null;
+        String json = null;
+        try {
+            is = getAssets().open("first_chart_data.json");
+            int bufferSize = is.available();
+            byte[] buffer = new byte[bufferSize];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer);
+
+//            Timber.d("JSON: " + json);
+        } catch (IOException ex) {
+            Timber.e("Can not open asset: " + ex.getMessage());
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException ex) {
+                    Timber.e("Can not close inputstream: " + ex.getMessage());
+                }
+            }
+
+        }
+        return json;
 
     }
 }
