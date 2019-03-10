@@ -7,11 +7,16 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.text.DateFormat;
+import java.text.Format;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
-import ru.vmochalov.vkchart.dto.Chart;
+import ru.vmochalov.vkchart.dto.CombinedChart;
 import timber.log.Timber;
 
 /**
@@ -19,6 +24,7 @@ import timber.log.Timber;
  */
 public class ChartView extends View {
 
+    private static DateFormat dateFormat = new SimpleDateFormat("MMM d");
     private int height;
 
     private int width;
@@ -27,7 +33,9 @@ public class ChartView extends View {
 
     private int axesColor = Color.GRAY;
 
-    private Chart chart;
+    private CombinedChart combinedChart;
+
+    private boolean[] chartsVisibility;
 
     public ChartView(Context context) {
         super(context);
@@ -68,10 +76,8 @@ public class ChartView extends View {
 
         drawBackground(canvas);
 
-        if (chart != null) {
-            drawAxes(canvas, chart);
-            drawChart(canvas, chart);
-        }
+        drawAxes(canvas);
+        drawChart(canvas);
 
 
     }
@@ -85,9 +91,10 @@ public class ChartView extends View {
 
     }
 
-    private void drawAxes(Canvas canvas, Chart chart) {
+    private void drawAxes(Canvas canvas) {
         paint.setColor(axesColor);
         paint.setTextSize(axesTextSize);
+        paint.setTextAlign(Paint.Align.LEFT);
 
         int[] levelValues = new int[levelsCount];
 
@@ -104,6 +111,22 @@ public class ChartView extends View {
             canvas.drawText(Integer.toString(levelValues[levelsCount - i]), 0 + axesTextMargin, y - axesTextMargin, paint);
 
         }
+
+        List<Date> abscissa = combinedChart.getAbscissa();
+        int firstDateIndex = 0;
+        int lastDateIndex = abscissa.size() - 1;
+
+        int step = (lastDateIndex - firstDateIndex) / 5;
+
+        canvas.drawText(dateFormat.format(abscissa.get(firstDateIndex)), 0 + axesTextMargin, height - axesTextMargin, paint);
+
+        paint.setTextAlign(Paint.Align.RIGHT);
+        canvas.drawText(dateFormat.format(abscissa.get(lastDateIndex)), width - axesTextMargin, height - axesTextMargin, paint);
+
+        //todo: draw six time labels and then draw chart
+//        canvas.drawText();
+//        for(int i = 0; i < 6; i++) {
+//        }
     }
 
     private int bottomAxisMargin = 20;
@@ -112,13 +135,13 @@ public class ChartView extends View {
     private int axesTextSize = 20;
     private int axesTextMargin = 4;
 
-    private void drawChart(Canvas canvas, Chart chart) {
+    private void drawChart(Canvas canvas) {
 
         paint.setColor(Color.BLACK);
 
-        if (chart != null) {
-            canvas.drawText(chart.getName(), 100, 100, paint);
-        }
+//        if (chart != null) {
+//            canvas.drawText(chart.getName(), 100, 100, paint);
+//        }
 
     }
 
@@ -128,14 +151,31 @@ public class ChartView extends View {
 
     private Date maxDate;
 
-    public void setChart(Chart chart) {
-        this.chart = chart;
-        this.maxValue = Collections.max(chart.getPoints().values());
+    public void setChart(CombinedChart combinedChart) {
+        this.combinedChart = combinedChart;
 
-        this.minDate = Collections.min(chart.getPoints().keySet());
-        this.maxDate = Collections.max(chart.getPoints().keySet());
+        this.chartsVisibility = new boolean[combinedChart.getLabels().size()];
+        this.maxValue = getMaxValue(combinedChart.getOrdinates());
+
+        List<Date> abscissa = combinedChart.getAbscissa();
+        this.minDate = abscissa.get(0); //Collections.min(chart.getPoints().keySet());
+        this.maxDate = abscissa.get(abscissa.size() - 1); //Collections.max(chart.getPoints().keySet());
 
         invalidate();
+
+        Timber.d("maxValue: " + maxValue);
+        Timber.d("minDate: " + minDate);
+        Timber.d("maxDate: " + maxDate);
+    }
+
+    private Integer getMaxValue(List<List<Integer>> values) {
+        Integer max = Integer.MIN_VALUE;
+
+        for (List<Integer> list : values) {
+            max = Math.max(max, Collections.max(list));
+        }
+
+        return max;
     }
 
 }
