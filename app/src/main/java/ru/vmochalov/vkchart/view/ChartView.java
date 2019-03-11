@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -106,8 +107,10 @@ public class ChartView extends View {
         for (int i = 1; i <= levelsCount; i++) {
 
             int y = topAxisMargin + (height - topAxisMargin - bottomAxisMargin) / levelsCount * i;
+            //todo: draw path with six lines instead of single lines
             canvas.drawLine(0, y, width, y, paint);
 
+//            Path
             canvas.drawText(Integer.toString(levelValues[levelsCount - i]), 0 + axesTextMargin, y - axesTextMargin, paint);
 
         }
@@ -124,6 +127,8 @@ public class ChartView extends View {
         canvas.drawText(dateFormat.format(abscissa.get(lastDateIndex)), width - axesTextMargin, height - axesTextMargin, paint);
 
         //todo: draw six time labels and then draw chart
+        //todo: use paint.measureText() before drawing
+
 //        canvas.drawText();
 //        for(int i = 0; i < 6; i++) {
 //        }
