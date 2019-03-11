@@ -24,9 +24,9 @@ import timber.log.Timber;
 public class ChartView extends View {
 
     private static DateFormat dateFormat = new SimpleDateFormat("MMM d");
-    private int height;
+    private float height;
 
-    private int width;
+    private float width;
 
     private int backgroundColor = Color.WHITE;
 
@@ -114,11 +114,11 @@ public class ChartView extends View {
         Timber.d("level values: " + Arrays.toString(levelValues));
 
         //drawing level lines
-        int yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+        float yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
 
         Path path = new Path();
         for (int i = 0; i < levelsCount; i++) {
-            int y = height - bottomAxisMargin - i * yDelta;
+            float y = height - bottomAxisMargin - i * yDelta;
 //            canvas.drawLine(0, y, width, y, paint);
 
             path.moveTo(0, y);
@@ -150,7 +150,7 @@ public class ChartView extends View {
 
         // draw middle labels
         int indexStep = (lastDateIndex - firstDateIndex) / absLevelsCount;
-        int xStep = (width - 2 * axesTextMargin) / (absLevelsCount - 1);
+        float xStep = (width - 2 * axesTextMargin) / (absLevelsCount - 1);
 
         for (int i = 1; i < absLevelsCount - 1; i++) {
             label = dateFormat.format(abscissa.get(i * indexStep)); //todo: handle last abscissa on chat properly
@@ -169,12 +169,55 @@ public class ChartView extends View {
 
     private void drawChart(Canvas canvas) {
 
-        paint.setColor(Color.BLACK);
+        List<Date> abscissa = combinedChart.getAbscissa();
+        int firstDateIndex = 0;
+        int lastDateIndex = abscissa.size() - 1;
 
-//        if (chart != null) {
-//            canvas.drawText(chart.getName(), 100, 100, paint);
-//        }
+        Path path = new Path();
 
+        float xStep = width / abscissa.size();
+        float yStep = (height - bottomAxisMargin - topAxisMargin) / maxValue;
+
+        Timber.d("height: " + height);
+        Timber.d("width: " + width);
+        Timber.d("xStep: " + xStep);
+        Timber.d("yStep: " + yStep);
+
+        for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
+            if (!chartsVisibility[i]) {
+                continue; // skip muted charts
+            }
+
+            paint.setColor(combinedChart.getColors().get(i));
+            path.reset();
+
+            // put first point
+            float x = 0;
+            int value = combinedChart.getOrdinates().get(i).get(firstDateIndex);
+            float y = height - bottomAxisMargin - value * yStep;
+            Timber.d("j: 0; x: " + x + " , y: " + y + " , value: " + value);
+            path.moveTo(x, y);
+
+            // put middle points
+            for (int j = firstDateIndex + 1; j < lastDateIndex; j++) {
+                x = j * xStep;
+                value = combinedChart.getOrdinates().get(i).get(j);
+                y = height - bottomAxisMargin - value * yStep;
+                path.lineTo(x, y);
+
+                Timber.d("j: " + j + "; x: " + x + " , y: " + y + " , value: " + value);
+
+            }
+
+            // put last point
+            x = width;
+            value = combinedChart.getOrdinates().get(i).get(lastDateIndex);
+            y = height - bottomAxisMargin - value * yStep;
+            path.lineTo(x, y);
+            Timber.d("j: " + lastDateIndex + "; x: " + x + " , y: " + y + " , value: " + value);
+
+            canvas.drawPath(path, paint);
+        }
     }
 
     private int maxValue;
@@ -187,6 +230,8 @@ public class ChartView extends View {
         this.combinedChart = combinedChart;
 
         this.chartsVisibility = new boolean[combinedChart.getLabels().size()];
+
+        Arrays.fill(chartsVisibility, true);
         this.maxValue = getMaxValue(combinedChart.getOrdinates());
 
         List<Date> abscissa = combinedChart.getAbscissa();
