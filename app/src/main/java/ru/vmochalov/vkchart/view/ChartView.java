@@ -9,13 +9,11 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import java.text.DateFormat;
-import java.text.Format;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import ru.vmochalov.vkchart.dto.CombinedChart;
 import timber.log.Timber;
@@ -96,47 +94,76 @@ public class ChartView extends View {
         paint.setColor(axesColor);
         paint.setTextSize(axesTextSize);
         paint.setTextAlign(Paint.Align.LEFT);
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
 
-        int[] levelValues = new int[levelsCount];
+        int[] levelValues = new int[levelsCount]; // from bottom to top
 
-        for (int i = levelsCount - 1; i >= 0; i--) {
-            levelValues[i] = maxValue / levelsCount * i;
+
+        int levelDelta = maxValue / levelsCount;
+
+        //calculationg background levels
+        for (int i = 0; i < levelsCount; i++) {
+            levelValues[i] = levelDelta * i;
         }
+
+//        for (int i = levelsCount - 1; i >= 0; i--) {
+//            levelValues[i] = maxValue / levelsCount * i;
+//        }
 
         Timber.d("level values: " + Arrays.toString(levelValues));
-        for (int i = 1; i <= levelsCount; i++) {
 
-            int y = topAxisMargin + (height - topAxisMargin - bottomAxisMargin) / levelsCount * i;
-            //todo: draw path with six lines instead of single lines
-            canvas.drawLine(0, y, width, y, paint);
+        //drawing level lines
+        int yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
 
-//            Path
-            canvas.drawText(Integer.toString(levelValues[levelsCount - i]), 0 + axesTextMargin, y - axesTextMargin, paint);
+        Path path = new Path();
+        for (int i = 0; i < levelsCount; i++) {
+            int y = height - bottomAxisMargin - i * yDelta;
+//            canvas.drawLine(0, y, width, y, paint);
 
+            path.moveTo(0, y);
+            path.lineTo(width, y);
+            canvas.drawText(Integer.toString(levelValues[i]), 0 + axesTextMargin, y - axesTextMargin, paint);
         }
+
+        canvas.drawPath(path, paint);
 
         List<Date> abscissa = combinedChart.getAbscissa();
         int firstDateIndex = 0;
         int lastDateIndex = abscissa.size() - 1;
 
-        int step = (lastDateIndex - firstDateIndex) / 5;
+        paint.setTextAlign(Paint.Align.CENTER);
 
-        canvas.drawText(dateFormat.format(abscissa.get(firstDateIndex)), 0 + axesTextMargin, height - axesTextMargin, paint);
+        // draw first label
+        String label = dateFormat.format(abscissa.get(firstDateIndex));
+        float labelWidth = paint.measureText(label);
+        float x = 0 + axesTextMargin + labelWidth / 2;
+        float y = height - axesTextSize / 2;
+        canvas.drawText(label, x, y, paint);
 
-        paint.setTextAlign(Paint.Align.RIGHT);
-        canvas.drawText(dateFormat.format(abscissa.get(lastDateIndex)), width - axesTextMargin, height - axesTextMargin, paint);
 
-        //todo: draw six time labels and then draw chart
-        //todo: use paint.measureText() before drawing
+        // draw last label
+        label = dateFormat.format(abscissa.get(lastDateIndex));
+        labelWidth = paint.measureText(label);
+        x = width - axesTextSize - labelWidth / 2;
+        canvas.drawText(label, x, y, paint);
 
-//        canvas.drawText();
-//        for(int i = 0; i < 6; i++) {
-//        }
+        // draw middle labels
+        int indexStep = (lastDateIndex - firstDateIndex) / absLevelsCount;
+        int xStep = (width - 2 * axesTextMargin) / (absLevelsCount - 1);
+
+        for (int i = 1; i < absLevelsCount - 1; i++) {
+            label = dateFormat.format(abscissa.get(i * indexStep)); //todo: handle last abscissa on chat properly
+            labelWidth = paint.measureText(label);
+            x = 0 + axesTextMargin + xStep * i - labelWidth / 2;
+            canvas.drawText(label, x, y, paint);
+        }
     }
 
-    private int bottomAxisMargin = 20;
-    private int topAxisMargin = 20;
+    private int bottomAxisMargin = 40;
+    private int topAxisMargin = 40;
     private int levelsCount = 6;
+    private int absLevelsCount = 6;
     private int axesTextSize = 20;
     private int axesTextMargin = 4;
 
