@@ -78,6 +78,7 @@ public class ChartView extends View {
         drawAxes(canvas);
         drawChart(canvas);
 
+        //todo: update look&feel styles: texts, colors, stroke width, spaces, etc...
 
     }
 
