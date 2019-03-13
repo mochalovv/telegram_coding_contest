@@ -81,6 +81,8 @@ public class ChartNavigationView extends View {
         setOnTouchListener(
                 new OnTouchListener() {
 
+                    private boolean isTouchHandled = false;
+
                     private float previousX;
                     private float dx;
                     private float x;
@@ -89,36 +91,39 @@ public class ChartNavigationView extends View {
                     public boolean onTouch(View v, MotionEvent event) {
 
                         if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            x = event.getX();
                             previousX = event.getX();
 
+                            isTouchHandled = (x >= frameStart && x <= frameStart + frameWidth);
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
-
+                            isTouchHandled = false;
                         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
 //                            x = (event.getX() < 0) ? 0 : event.getX();
+                            if (isTouchHandled) {
+                                if (event.getX() < 0) {
+                                    x = 0;
+                                } else if (event.getX() > width) {
+                                    x = width;
+                                } else {
+                                    x = event.getX();
+                                }
 
-                            if (event.getX() < 0) {
-                                x = 0;
-                            } else if (event.getX() > width) {
-                                x = width;
-                            } else {
-                                x = event.getX();
-                            }
+                                dx = x - previousX;
+                                previousX = x;
 
-                            dx = x - previousX;
-                            previousX = x;
+                                frameStart += dx;
 
-                            frameStart += dx;
-
-                            if (frameStart < 0) {
-                                frameStart = 0;
-                            } else if (frameStart > width - frameWidth) {
-                                frameStart = width - frameWidth;
-                            }
+                                if (frameStart < 0) {
+                                    frameStart = 0;
+                                } else if (frameStart > width - frameWidth) {
+                                    frameStart = width - frameWidth;
+                                }
 //                            secondPassiveStartPixel += dx;
-                        }
-                        Timber.d("onTouch; event: " + event.toString());
+                            }
+                            Timber.d("onTouch; event: " + event.toString());
 
-                        ChartNavigationView.this.invalidate();
+                            ChartNavigationView.this.invalidate();
+                        }
                         return true;
                     }
                 }
