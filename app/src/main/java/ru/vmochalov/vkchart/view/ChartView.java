@@ -98,15 +98,20 @@ public class ChartView extends View {
 
         Timber.d("onMeasure; width: " + MeasureSpec.toString(widthMeasureSpec) + " , height: " + MeasureSpec.toString(heightMeasureSpec));
 
-        height = MeasureSpec.getSize(heightMeasureSpec);
-        width = MeasureSpec.getSize(widthMeasureSpec);
+//        height = MeasureSpec.getSize(heightMeasureSpec);
+//        width = MeasureSpec.getSize(widthMeasureSpec);
+        //todo: send preferred size
 
     }
 
     public void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
 
-        Timber.d("onLayout");
+        Timber.d("onLayout; changed: " + changed + ", left: " + left + ", top: " + top + ", right: " + right + ", bottom: " + bottom);
+
+        height = bottom - top; //MeasureSpec.getSize(heightMeasureSpec);
+        width = right - left; //MeasureSpec.getSize(widthMeasureSpec);
+
     }
 
     public void onDraw(Canvas canvas) {
