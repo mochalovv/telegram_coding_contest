@@ -13,7 +13,6 @@ import android.view.View;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -86,11 +85,6 @@ public class ChartView extends View {
         );
 
         attributes.recycle();
-//        val styledAttrs = context.obtainStyledAttributes(attrs, R.styleable.ProxyViewGroup)
-//
-//        nickname = styledAttrs.getString(R.styleable.ProxyViewGroup_nickname)
-//
-//        styledAttrs.recycle()
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -286,7 +280,7 @@ public class ChartView extends View {
         this.chartsVisibility = new boolean[combinedChart.getLabels().size()];
 
         Arrays.fill(chartsVisibility, true);
-        this.maxValue = getMaxValue(combinedChart.getOrdinates());
+        this.maxValue = combinedChart.getMaxValue();
 
         List<Date> abscissa = combinedChart.getAbscissa();
         this.minDate = abscissa.get(0); //Collections.min(chart.getPoints().keySet());
@@ -297,16 +291,6 @@ public class ChartView extends View {
         Timber.d("maxValue: " + maxValue);
         Timber.d("minDate: " + minDate);
         Timber.d("maxDate: " + maxDate);
-    }
-
-    private Integer getMaxValue(List<List<Integer>> values) {
-        Integer max = Integer.MIN_VALUE;
-
-        for (List<Integer> list : values) {
-            max = Math.max(max, Collections.max(list));
-        }
-
-        return max;
     }
 
 }
