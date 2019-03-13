@@ -77,11 +77,20 @@ public class ChartNavigationView extends View {
         initTouchListener();
     }
 
+    private enum TouchType {
+        LEFT_BORDER_TOUCH, FRAME_TOUCH, RIGHT_BORDER_TOUCH, UNHANDLED_TOUCH
+    }
+
     private void initTouchListener() {
         setOnTouchListener(
                 new OnTouchListener() {
 
-                    private boolean isTouchHandled = false;
+                    private float borderTouchArea = 20; //px
+
+                    private float minimumFrameWidth = 40; // px
+
+                    //                    private boolean isTouchHandled = false;
+                    private TouchType touchType;
 
                     private float previousX;
                     private float dx;
@@ -94,12 +103,24 @@ public class ChartNavigationView extends View {
                             x = event.getX();
                             previousX = event.getX();
 
-                            isTouchHandled = (x >= frameStart && x <= frameStart + frameWidth);
+                            if (x >= frameStart - borderTouchArea && x <= frameStart + borderTouchArea) {
+                                touchType = TouchType.LEFT_BORDER_TOUCH;
+                            } else if (x >= frameStart + frameWidth - borderTouchArea && x <= frameStart + frameWidth + borderTouchArea) {
+                                touchType = TouchType.RIGHT_BORDER_TOUCH;
+                            } else if (x >= frameStart && x <= frameStart + frameWidth) {
+                                touchType = TouchType.FRAME_TOUCH;
+                            } else {
+                                touchType = TouchType.UNHANDLED_TOUCH;
+                            }
+
+                            Timber.d("touchType: " + touchType);
+//                            isTouchHandled = (x >= frameStart && x <= frameStart + frameWidth);
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                            isTouchHandled = false;
+                            touchType = null;
+//                            isTouchHandled = false;
                         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
 //                            x = (event.getX() < 0) ? 0 : event.getX();
-                            if (isTouchHandled) {
+                            if (touchType != TouchType.UNHANDLED_TOUCH) {
                                 if (event.getX() < 0) {
                                     x = 0;
                                 } else if (event.getX() > width) {
@@ -111,47 +132,34 @@ public class ChartNavigationView extends View {
                                 dx = x - previousX;
                                 previousX = x;
 
-                                frameStart += dx;
-
-                                if (frameStart < 0) {
-                                    frameStart = 0;
-                                } else if (frameStart > width - frameWidth) {
-                                    frameStart = width - frameWidth;
+                                if ((touchType == TouchType.FRAME_TOUCH || touchType == TouchType.LEFT_BORDER_TOUCH) && frameStart + dx < 0) {
+                                    dx = -frameStart;
+                                } else if ((touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) && frameStart + frameWidth + dx > width) {
+                                    dx = width - frameStart - frameWidth;
                                 }
-//                            secondPassiveStartPixel += dx;
+
+                                if (touchType == TouchType.FRAME_TOUCH) {
+                                    frameStart += dx;
+
+                                } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
+                                    frameStart += dx;
+                                    frameWidth -= dx;
+                                } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
+                                    frameWidth += dx;
+                                }
+
+                                //todo: fix minimum frame width
                             }
                             Timber.d("onTouch; event: " + event.toString());
 
+                            Timber.d("before invalidate: start: " + frameStart + ", frameWidth: " + frameWidth);
                             ChartNavigationView.this.invalidate();
                         }
                         return true;
                     }
                 }
         );
-//        float firstPassiveStartPixel = 0;
-//        float activeStartPixel = 200;
-//        float secondPassiveStartPixel = 500;
 
-
-//        setOnDragListener(
-//                new OnDragListener() {
-//                    @Override
-//                    public boolean onDrag(View v, DragEvent event) {
-//                        Timber.d("onDrag; event: " + event.toString());
-//                        return true;
-//                    }
-//                }
-//        );
-
-//        setOnGenericMotionListener(
-//                new OnGenericMotionListener() {
-//                    @Override
-//                    public boolean onGenericMotion(View v, MotionEvent event) {
-//                        Timber.d("onGenericMotion; event: " + event.toString());
-//                        return false;
-//                    }
-//                }
-//        );
     }
 
     public void onLayout(boolean changed, int left, int top, int right, int bottom) {
