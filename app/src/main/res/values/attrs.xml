@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- todo: add attributes here-->
-    <!--<declare-styleable name="ProxyViewGroup">-->
-    <!--<attr name="nickname" format="string"/>-->
-    <!--&lt;!&ndash;<flag name=""&ndash;&gt;-->
-    <!--&lt;!&ndash;</attr>&ndash;&gt;-->
-    <!--</declare-styleable>-->
+    <declare-styleable name="ChartView">
+        <attr name="axisTextSize" format="dimension" />
+        <attr name="axisLineWidth" format="dimension" />
+        <attr name="chartLineWidth" format="dimension" />
+    </declare-styleable>
 
+    <dimen name="chartViewDefaultTextSize">10sp</dimen>
+    <dimen name="chartViewDefaultAxisStrokeWidth">1px</dimen>
+    <dimen name="chartViewDefaultLineStrokeWidth">2dp</dimen>
 
 </resources>

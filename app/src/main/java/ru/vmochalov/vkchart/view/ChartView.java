@@ -1,6 +1,8 @@
 package ru.vmochalov.vkchart.view;
 
 import android.content.Context;
+import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -15,6 +17,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
+import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.CombinedChart;
 import timber.log.Timber;
 
@@ -36,20 +39,58 @@ public class ChartView extends View {
 
     private boolean[] chartsVisibility;
 
+    // styleable attributes
+    private int axisTextSize;
+    private int lineStrokeWidth;
+    private int axisStrokeWidth;
+
     public ChartView(Context context) {
         super(context);
     }
 
     public ChartView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
+
+        handleAttributeSet(attributeSet);
     }
 
     public ChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
         super(context, attributeSet, defStyleAttr);
+
+        handleAttributeSet(attributeSet);
     }
 
     public ChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
         super(context, attributeSet, defStyleAttr, defStyleRes);
+
+        handleAttributeSet(attributeSet);
+    }
+
+    private void handleAttributeSet(AttributeSet attributeSet) {
+        TypedArray attributes = getContext().obtainStyledAttributes(attributeSet, R.styleable.ChartView);
+        Resources resources = getContext().getResources();
+
+        axisTextSize = attributes.getDimensionPixelSize(
+                R.styleable.ChartView_axisTextSize,
+                resources.getDimensionPixelSize(R.dimen.chartViewDefaultTextSize)
+        );
+
+        lineStrokeWidth = attributes.getDimensionPixelSize(
+                R.styleable.ChartView_chartLineWidth,
+                resources.getDimensionPixelSize(R.dimen.chartViewDefaultLineStrokeWidth)
+        );
+
+        axisStrokeWidth = attributes.getDimensionPixelSize(
+                R.styleable.ChartView_axisLineWidth,
+                resources.getDimensionPixelSize(R.dimen.chartViewDefaultAxisStrokeWidth)
+        );
+
+        attributes.recycle();
+//        val styledAttrs = context.obtainStyledAttributes(attrs, R.styleable.ProxyViewGroup)
+//
+//        nickname = styledAttrs.getString(R.styleable.ProxyViewGroup_nickname)
+//
+//        styledAttrs.recycle()
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -86,6 +127,7 @@ public class ChartView extends View {
 
     private void drawBackground(Canvas canvas) {
         paint.setColor(backgroundColor);
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         canvas.drawRect(0, 0, width, height, paint);
 
@@ -93,10 +135,13 @@ public class ChartView extends View {
 
     private void drawAxes(Canvas canvas) {
         paint.setColor(axesColor);
-        paint.setTextSize(axesTextSize);
+//        paint.setTextSize(axesTextSize);
+        paint.setTextSize(axisTextSize);
+        paint.setStrokeWidth(axisStrokeWidth);
         paint.setTextAlign(Paint.Align.LEFT);
         paint.setAntiAlias(true);
-        paint.setStyle(Paint.Style.STROKE);
+//        paint.setStyle();
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         int[] levelValues = new int[levelsCount]; // from bottom to top
 
@@ -184,12 +229,15 @@ public class ChartView extends View {
         Timber.d("xStep: " + xStep);
         Timber.d("yStep: " + yStep);
 
+        paint.setStyle(Paint.Style.STROKE);
+
         for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
             if (!chartsVisibility[i]) {
                 continue; // skip muted charts
             }
 
             paint.setColor(combinedChart.getColors().get(i));
+            paint.setStrokeWidth(lineStrokeWidth);
             path.reset();
 
             // put first point
