@@ -107,7 +107,7 @@ public class ChartNavigationView extends View {
                                 touchType = TouchType.UNHANDLED_TOUCH;
                             }
 
-                            Timber.d("touchType: " + touchType);
+//                            Timber.d("touchType: " + touchType);
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
 
                             if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {

@@ -212,7 +212,31 @@ public class ChartView extends View {
     private int axesTextSize = 20;
     private int axesTextMargin = 4;
 
+
+    private double startPercent = 0.5;
+    private double endPercent = 1.0;
+
+    public void setStartVisible(double startVisiblePercent) {
+        //todo: add checks for 0.0 .. 1.0
+        startPercent = startVisiblePercent;
+        invalidate();
+    }
+
+    public void setEndVisible(double endVisiblePercent) {
+        endPercent = endVisiblePercent;
+        invalidate();
+    }
+
+    public void setVisibleRange(double startVisiblePercent, double endVisiblePercent) {
+        startPercent = startVisiblePercent;
+        endPercent = endVisiblePercent;
+        invalidate();
+    }
+
     private void drawChart(Canvas canvas) {
+
+        double visibleWidth = width * (endPercent - startPercent);
+
 
         List<Date> abscissa = combinedChart.getAbscissa();
         int firstDateIndex = 0;
@@ -221,12 +245,19 @@ public class ChartView extends View {
         Path path = new Path();
 
         float xStep = width / abscissa.size();
+        xStep *= (width / visibleWidth);
+
+        float enlargedWidth = (float) (width * width / visibleWidth);
+
+        float x0 = (float) (-enlargedWidth * startPercent);
+
+
         float yStep = (height - bottomAxisMargin - topAxisMargin) / maxValue;
 
-        Timber.d("height: " + height);
-        Timber.d("width: " + width);
-        Timber.d("xStep: " + xStep);
-        Timber.d("yStep: " + yStep);
+//        Timber.d("height: " + height);
+//        Timber.d("width: " + width);
+//        Timber.d("xStep: " + xStep);
+//        Timber.d("yStep: " + yStep);
 
         paint.setStyle(Paint.Style.STROKE);
 
@@ -239,30 +270,62 @@ public class ChartView extends View {
             paint.setStrokeWidth(lineStrokeWidth);
             path.reset();
 
+            float previousX;
+            float previousY;
             // put first point
-            float x = 0;
+            float x = x0 + 0;
             int value = combinedChart.getOrdinates().get(i).get(firstDateIndex);
             float y = height - bottomAxisMargin - value * yStep;
-            Timber.d("j: 0; x: " + x + " , y: " + y + " , value: " + value);
-            path.moveTo(x, y);
+//            Timber.d("j: 0; x: " + x + " , y: " + y + " , value: " + value);
+
+
+            if (x >= 0 && x <= width) {
+                path.moveTo(x, y);
+            }
+            previousX = x;
+            previousY = y;
+
 
             // put middle points
             for (int j = firstDateIndex + 1; j < lastDateIndex; j++) {
-                x = j * xStep;
+                x = x0 + j * xStep;
                 value = combinedChart.getOrdinates().get(i).get(j);
                 y = height - bottomAxisMargin - value * yStep;
-                path.lineTo(x, y);
 
-                Timber.d("j: " + j + "; x: " + x + " , y: " + y + " , value: " + value);
+                if (x >= 0 && x <= width) {
+                    // put point
+                    if (path.isEmpty()) {
+                        path.moveTo(previousX, previousY);
+                    }
 
+                    path.lineTo(x, y);
+                }
+
+                if (x > width && previousX <= width) {
+                    path.lineTo(x, y);
+                }
+
+//                path.lineTo(x, y);
+
+//                Timber.d("j: " + j + "; x: " + x + " , y: " + y + " , value: " + value);
+
+                previousX = x;
+                previousY = y;
             }
 
             // put last point
-            x = width;
+            x = x0 + enlargedWidth; //width;
             value = combinedChart.getOrdinates().get(i).get(lastDateIndex);
             y = height - bottomAxisMargin - value * yStep;
-            path.lineTo(x, y);
-            Timber.d("j: " + lastDateIndex + "; x: " + x + " , y: " + y + " , value: " + value);
+
+
+            if (previousX <= width) {
+                path.lineTo(x, y);
+            }
+
+
+//            path.lineTo(x, y);
+//            Timber.d("j: " + lastDateIndex + "; x: " + x + " , y: " + y + " , value: " + value);
 
             canvas.drawPath(path, paint);
         }
