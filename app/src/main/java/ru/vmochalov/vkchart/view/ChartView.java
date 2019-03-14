@@ -133,6 +133,7 @@ public class ChartView extends View {
     }
 
     private void drawAxes(Canvas canvas) {
+        //todo: add axes changes when period is changed
         paint.setColor(axesColor);
 //        paint.setTextSize(axesTextSize);
         paint.setTextSize(axisTextSize);
