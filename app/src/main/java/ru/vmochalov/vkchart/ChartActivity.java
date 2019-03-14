@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import ru.vmochalov.vkchart.dto.CombinedChart;
+import ru.vmochalov.vkchart.view.ChartNavigationView;
 import ru.vmochalov.vkchart.view.ChartView;
 import timber.log.Timber;
 
@@ -21,6 +22,7 @@ import timber.log.Timber;
 public class ChartActivity extends Activity {
 
     private ChartView chartView;
+    private ChartNavigationView chartNavigationView;
     private CheckBox joinedCheckBox;
     private CheckBox leftCheckBox;
 
@@ -30,6 +32,7 @@ public class ChartActivity extends Activity {
         setContentView(R.layout.activity_chart);
 
         chartView = findViewById(R.id.chart);
+        chartNavigationView = findViewById(R.id.chartNavigation);
         joinedCheckBox = findViewById(R.id.joinedCheckBox);
         leftCheckBox = findViewById(R.id.leftCheckBox);
 
@@ -52,6 +55,24 @@ public class ChartActivity extends Activity {
             }
         });
 
+        chartNavigationView.setPeriodChangedListener(
+                new ChartNavigationView.PeriodChangedListener() {
+                    @Override
+                    public void onPeriodLengthChanged(double periodStart, double periodEnd) {
+                        Timber.d("onPeriodLengthChanged; periodStart: " + periodStart + ", periodEnd: " + periodEnd);
+                    }
+
+                    @Override
+                    public void onPeriodMoved(double periodStart, double periodEnd) {
+                        Timber.d("onPeriodMoved; periodStart: " + periodStart + ", periodEnd: " + periodEnd);
+                    }
+
+                    @Override
+                    public void onPeriodModifyFinished() {
+                        Timber.d("onPeriodModifyFinished()");
+                    }
+                }
+        );
         initChart();
     }
 
@@ -60,7 +81,9 @@ public class ChartActivity extends Activity {
         String json = readInputData();
 
         try {
-            chartView.setChart(CombinedChart.parse(json));
+            CombinedChart chart = CombinedChart.parse(json);
+            chartView.setChart(chart);
+            chartNavigationView.setCombinedChart(chart);
         } catch (JSONException ex) {
             Timber.e("Can not parse json: " + ex.getMessage());
         }
