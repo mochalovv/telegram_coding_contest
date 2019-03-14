@@ -114,13 +114,13 @@ public class ChartNavigationView extends View {
                             }
 
                             Timber.d("touchType: " + touchType);
-//                            isTouchHandled = (x >= frameStart && x <= frameStart + frameWidth);
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
                             touchType = null;
-//                            isTouchHandled = false;
                         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-//                            x = (event.getX() < 0) ? 0 : event.getX();
+
                             if (touchType != TouchType.UNHANDLED_TOUCH) {
+
+                                //do not handle points outside the view
                                 if (event.getX() < 0) {
                                     x = 0;
                                 } else if (event.getX() > width) {
@@ -132,15 +132,27 @@ public class ChartNavigationView extends View {
                                 dx = x - previousX;
                                 previousX = x;
 
+                                // do not allow frame move outside the view
                                 if ((touchType == TouchType.FRAME_TOUCH || touchType == TouchType.LEFT_BORDER_TOUCH) && frameStart + dx < 0) {
                                     dx = -frameStart;
                                 } else if ((touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) && frameStart + frameWidth + dx > width) {
                                     dx = width - frameStart - frameWidth;
                                 }
 
+                                //do not allow frame be "left side right"
+                                if (touchType == TouchType.LEFT_BORDER_TOUCH) {
+                                    if (frameStart + dx + minimumFrameWidth > frameStart + frameWidth) {
+                                        dx = frameWidth - minimumFrameWidth;
+                                    }
+                                } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
+                                    if (frameStart + frameWidth + dx > frameStart + minimumFrameWidth) {
+                                        //todo: continue fix "left side right frame" with drawing on a paper
+                                    }
+                                }
+
+                                // consume dx according to current event
                                 if (touchType == TouchType.FRAME_TOUCH) {
                                     frameStart += dx;
-
                                 } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
                                     frameStart += dx;
                                     frameWidth -= dx;
@@ -148,7 +160,6 @@ public class ChartNavigationView extends View {
                                     frameWidth += dx;
                                 }
 
-                                //todo: fix minimum frame width
                             }
                             Timber.d("onTouch; event: " + event.toString());
 
