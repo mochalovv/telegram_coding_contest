@@ -55,6 +55,24 @@ public class ChartActivity extends Activity {
             }
         });
 
+        chartNavigationView.setPeriodChangedListener(
+                new ChartNavigationView.PeriodChangedListener() {
+                    @Override
+                    public void onPeriodLengthChanged(double periodStart, double periodEnd) {
+                        Timber.d("onPeriodLengthChanged; periodStart: " + periodStart + ", periodEnd: " + periodEnd);
+                    }
+
+                    @Override
+                    public void onPeriodMoved(double periodStart, double periodEnd) {
+                        Timber.d("onPeriodMoved; periodStart: " + periodStart + ", periodEnd: " + periodEnd);
+                    }
+
+                    @Override
+                    public void onPeriodModifyFinished() {
+                        Timber.d("onPeriodModifyFinished()");
+                    }
+                }
+        );
         initChart();
     }
 

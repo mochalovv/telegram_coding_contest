@@ -39,22 +39,16 @@ public class ChartNavigationView extends View {
     private float frameHorizontalBorderWidth = 10;
     private float frameVerticalBorderWidth = 4;
 
-    private PeriodChangedListener periodChangedListener = new PeriodChangedListener() {
-        @Override
-        public void onPeriodLengthChanged(int periodStart, int periodEnd) {
-            Timber.d("onPeriodLengthChanged; periodStart: " + periodStart + ", periodEnd: " + periodEnd);
-        }
-
-        @Override
-        public void onPeriodMoved(int periodStart, int periodEnd) {
-            Timber.d("onPeriodMoved; periodStart: " + periodStart + ", periodEnd: " + periodEnd);
-        }
-    };
+    private PeriodChangedListener periodChangedListener;
 
     public interface PeriodChangedListener {
-        void onPeriodLengthChanged(int periodStart, int periodEnd);
+        //  0.0 <= x <= 1.0
+        void onPeriodLengthChanged(double periodStart, double periodEnd);
 
-        void onPeriodMoved(int periodStart, int periodEnd);
+        // 0.0 <= x <= 1.0
+        void onPeriodMoved(double periodStart, double periodEnd);
+
+        void onPeriodModifyFinished();
     }
 
     public ChartNavigationView(Context context) {
@@ -115,6 +109,13 @@ public class ChartNavigationView extends View {
 
                             Timber.d("touchType: " + touchType);
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
+
+                            if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
+                                if (periodChangedListener != null) {
+                                    periodChangedListener.onPeriodModifyFinished();
+                                }
+                            }
+
                             touchType = null;
                         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
 
@@ -145,8 +146,8 @@ public class ChartNavigationView extends View {
                                         dx = frameWidth - minimumFrameWidth;
                                     }
                                 } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                    if (frameStart + frameWidth + dx > frameStart + minimumFrameWidth) {
-                                        //todo: continue fix "left side right frame" with drawing on a paper
+                                    if (frameStart + frameWidth + dx < frameStart + minimumFrameWidth) {
+                                        dx = minimumFrameWidth - frameWidth;
                                     }
                                 }
 
@@ -160,10 +161,18 @@ public class ChartNavigationView extends View {
                                     frameWidth += dx;
                                 }
 
-                            }
-                            Timber.d("onTouch; event: " + event.toString());
+                                double frameStartInPercent = frameStart / width;
+                                double frameEndInPercent = (frameStart + frameWidth) / width;
 
-                            Timber.d("before invalidate: start: " + frameStart + ", frameWidth: " + frameWidth);
+                                if (periodChangedListener != null & dx != 0) {
+                                    if (touchType == TouchType.FRAME_TOUCH) {
+                                        periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
+                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
+                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+                                    }
+                                }
+                            }
+
                             ChartNavigationView.this.invalidate();
                         }
                         return true;
@@ -307,6 +316,10 @@ public class ChartNavigationView extends View {
         this.periodEndDateIndex = 50;
 
         invalidate();
+    }
+
+    public void setPeriodChangedListener(PeriodChangedListener listener) {
+        this.periodChangedListener = listener;
     }
 
 }
