@@ -117,7 +117,8 @@ public class ChartView extends View {
 
         drawBackground(canvas);
 
-        drawAxes(canvas);
+        drawVerticalAxis(canvas);
+        drawHorizontalAxis(canvas);
         drawChart(canvas);
 
         //todo: update look&feel styles: texts, colors, stroke width, spaces, etc...
@@ -134,7 +135,12 @@ public class ChartView extends View {
 
     }
 
-    private void drawAxes(Canvas canvas) {
+    Paint debugPaint = new Paint();
+
+    private void drawVerticalAxis(Canvas canvas) {
+        debugPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        debugPaint.setColor(Color.LTGRAY);
+
         //todo: add axes changes when period is changed
         paint.setColor(axesColor);
 //        paint.setTextSize(axesTextSize);
@@ -175,6 +181,9 @@ public class ChartView extends View {
         }
 
         canvas.drawPath(path, paint);
+    }
+
+    private void drawHorizontalAxis(Canvas canvas) {
 
         List<Date> abscissa = combinedChart.getAbscissa();
         int firstDateIndex = 0;
@@ -182,18 +191,26 @@ public class ChartView extends View {
 
         paint.setTextAlign(Paint.Align.CENTER);
 
+        //todo: draw labels thorowly
+
+
+        // на экране шесть, но надо рисовать, если частично торчит.
         // draw first label
         String label = dateFormat.format(abscissa.get(firstDateIndex));
         float labelWidth = paint.measureText(label);
         float x = 0 + axesTextMargin + labelWidth / 2;
         float y = height - axesTextSize / 2;
+        //todo: draw rectangles
+        canvas.drawRect(x - labelWidth / 2, y - axesTextSize / 2, x + labelWidth / 2, y + axesTextSize / 2, debugPaint);
         canvas.drawText(label, x, y, paint);
+
 
 
         // draw last label
         label = dateFormat.format(abscissa.get(lastDateIndex));
         labelWidth = paint.measureText(label);
         x = width - axesTextSize - labelWidth / 2;
+        canvas.drawRect(x - labelWidth / 2, y - axesTextSize / 2, x + labelWidth / 2, y + axesTextSize / 2, debugPaint);
         canvas.drawText(label, x, y, paint);
 
         // draw middle labels
@@ -204,6 +221,7 @@ public class ChartView extends View {
             label = dateFormat.format(abscissa.get(i * indexStep)); //todo: handle last abscissa on chat properly
             labelWidth = paint.measureText(label);
             x = 0 + axesTextMargin + xStep * i - labelWidth / 2;
+            canvas.drawRect(x - labelWidth / 2, y - axesTextSize / 2, x + labelWidth / 2, y + axesTextSize / 2, debugPaint);
             canvas.drawText(label, x, y, paint);
         }
     }
