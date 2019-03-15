@@ -12,7 +12,9 @@ import android.view.View;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -146,7 +148,7 @@ public class ChartView extends View {
         int[] levelValues = new int[levelsCount]; // from bottom to top
 
 
-        int levelDelta = maxValue / levelsCount;
+        int levelDelta = getMaxVisibleValue() / levelsCount;
 
         //calculationg background levels
         for (int i = 0; i < levelsCount; i++) {
@@ -234,6 +236,8 @@ public class ChartView extends View {
         invalidate();
     }
 
+    Path chartPath = new Path();
+
     private void drawChart(Canvas canvas) {
 
         double visibleWidth = width * (endPercent - startPercent);
@@ -243,7 +247,6 @@ public class ChartView extends View {
         int firstDateIndex = 0;
         int lastDateIndex = abscissa.size() - 1;
 
-        Path path = new Path();
 
         float xStep = width / abscissa.size();
         xStep *= (width / visibleWidth);
@@ -253,7 +256,7 @@ public class ChartView extends View {
         float x0 = (float) (-enlargedWidth * startPercent);
 
 
-        float yStep = (height - bottomAxisMargin - topAxisMargin) / maxValue;
+        float yStep = (height - bottomAxisMargin - topAxisMargin) / getMaxVisibleValue();
 
 //        Timber.d("height: " + height);
 //        Timber.d("width: " + width);
@@ -269,7 +272,7 @@ public class ChartView extends View {
 
             paint.setColor(combinedChart.getColors().get(i));
             paint.setStrokeWidth(lineStrokeWidth);
-            path.reset();
+            chartPath.reset();
 
             float previousX;
             float previousY;
@@ -281,7 +284,7 @@ public class ChartView extends View {
 
 
             if (x >= 0 && x <= width) {
-                path.moveTo(x, y);
+                chartPath.moveTo(x, y);
             }
             previousX = x;
             previousY = y;
@@ -295,15 +298,15 @@ public class ChartView extends View {
 
                 if (x >= 0 && x <= width) {
                     // put point
-                    if (path.isEmpty()) {
-                        path.moveTo(previousX, previousY);
+                    if (chartPath.isEmpty()) {
+                        chartPath.moveTo(previousX, previousY);
                     }
 
-                    path.lineTo(x, y);
+                    chartPath.lineTo(x, y);
                 }
 
                 if (x > width && previousX <= width) {
-                    path.lineTo(x, y);
+                    chartPath.lineTo(x, y);
                 }
 
 //                path.lineTo(x, y);
@@ -321,22 +324,16 @@ public class ChartView extends View {
 
 
             if (previousX <= width) {
-                path.lineTo(x, y);
+                chartPath.lineTo(x, y);
             }
 
 
 //            path.lineTo(x, y);
 //            Timber.d("j: " + lastDateIndex + "; x: " + x + " , y: " + y + " , value: " + value);
 
-            canvas.drawPath(path, paint);
+            canvas.drawPath(chartPath, paint);
         }
     }
-
-    private int maxValue;
-
-    private Date minDate;
-
-    private Date maxDate;
 
     public void setChart(CombinedChart combinedChart) {
         this.combinedChart = combinedChart;
@@ -344,17 +341,42 @@ public class ChartView extends View {
         this.chartsVisibility = new boolean[combinedChart.getLabels().size()];
 
         Arrays.fill(chartsVisibility, true);
-        this.maxValue = combinedChart.getMaxValue();
-
-        List<Date> abscissa = combinedChart.getAbscissa();
-        this.minDate = abscissa.get(0); //Collections.min(chart.getPoints().keySet());
-        this.maxDate = abscissa.get(abscissa.size() - 1); //Collections.max(chart.getPoints().keySet());
 
         invalidate();
+    }
 
-        Timber.d("maxValue: " + maxValue);
-        Timber.d("minDate: " + minDate);
-        Timber.d("maxDate: " + maxDate);
+    private List<List<Integer>> visiblePointValues = new ArrayList<>();
+
+    private int getMaxVisibleValue() {
+
+        int absSize = combinedChart.getAbscissa().size();
+
+        int firstVisiblePointIndex = (int) (absSize * startPercent);
+        int lastVisiblePointIndex = (int) Math.ceil(absSize * endPercent);
+
+        if (firstVisiblePointIndex > 0 && firstVisiblePointIndex == absSize) {
+            firstVisiblePointIndex = absSize - 1;
+        }
+
+        visiblePointValues.clear();
+
+        for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
+            if (chartsVisibility[i]) {
+                visiblePointValues.add(combinedChart.getOrdinates().get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
+            }
+        }
+
+        return getMaxValue(visiblePointValues);
+    }
+
+    private int getMaxValue(List<List<Integer>> lists) {
+        int max = Integer.MIN_VALUE;
+
+        for (List<Integer> list : lists) {
+            max = Math.max(max, Collections.max(list));
+        }
+
+        return max;
     }
 
 }
