@@ -183,6 +183,12 @@ public class ChartView extends View {
         canvas.drawPath(path, paint);
     }
 
+    //todo: draw horizontal labels thorowly.
+    // todo: Then add support of changing chart visibility from the outside.
+    // todo: then clean code and optimize as possible
+    // todo: then unite all in a single ViewGroup
+    //todo: then add animations
+
     private void drawHorizontalAxis(Canvas canvas) {
 
         List<Date> abscissa = combinedChart.getAbscissa();
@@ -190,9 +196,6 @@ public class ChartView extends View {
         int lastDateIndex = abscissa.size() - 1;
 
         paint.setTextAlign(Paint.Align.CENTER);
-
-        //todo: draw labels thorowly
-
 
         // на экране шесть, но надо рисовать, если частично торчит.
         // draw first label
