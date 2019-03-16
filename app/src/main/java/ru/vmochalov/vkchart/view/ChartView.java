@@ -6,7 +6,6 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -112,8 +111,6 @@ public class ChartView extends View {
     private int[] pointIndexesToDrawLabel;
     private float pointsInOnePartition;
 
-    Path chartPath = new Path();
-
     private double visibleWidth;
     private int firstDateIndex;
     private int lastDateIndex;
@@ -123,23 +120,21 @@ public class ChartView extends View {
     private float yStep;
     private List<Date> abscissa;
 
-    private int[] verticalLevelValues; // = new int[levelsCount]; // from bottom to top
+    private int[] verticalLevelValues;
 
     private String[] verticalLevelValuesAsStrings;
 
-    private int verticalLevelDelta;// = getMaxVisibleValue() / levelsCount;
+    private int verticalLevelDelta;
 
     private float[] verticalAxesLinesCoords;
 
-//        if (!areLinesVisible() || verticalLevelDelta == 0) verticalLevelDelta = 1; // in case user is confused
+    private int linesCount;
 
-    //calculationg background levels
-//        for (int i = 0; i < levelsCount; i++) {
-//        verticalLevelValues[i] = verticalLevelDelta * i;
-//    }
+    private int firstVisiblePointIndex;
+    private int lastVisiblePointIndex;
 
     //drawing level lines
-    float yDelta; // = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+    float yDelta;
 
     private void initViewWideProperties() {
         backgroundPaint.setColor(backgroundColor);
@@ -194,6 +189,20 @@ public class ChartView extends View {
         enlargedWidth = (float) (width * width / visibleWidth);
 
         x0 = (float) (-enlargedWidth * startPercent);
+
+        firstVisiblePointIndex = (int) Math.floor(-x0 / xStep);
+
+        if (firstVisiblePointIndex < firstDateIndex) {
+            firstVisiblePointIndex = firstDateIndex;
+        }
+
+        lastVisiblePointIndex = (int) Math.ceil((width - x0) / xStep);
+
+        if (lastVisiblePointIndex > lastDateIndex) {
+            lastVisiblePointIndex = lastDateIndex;
+        }
+
+        chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
     }
 
     private void initVariablesForVerticalChartDrawing() {
@@ -476,62 +485,53 @@ public class ChartView extends View {
         }
     }
 
+    private float previousX;
+    private float previousY;
+    private float nextX;
+    private int pointValue;
+    private float nextY;
+    private float[] chartPoints;
+    private int chartPointsIndex;
+    private List<Integer> chartOrdinate;
+
     private void drawChart(Canvas canvas) {
-        for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
+        for (int i = 0; i < linesCount; i++) {
             if (!chartsVisibility[i]) {
                 continue; // skip muted charts
             }
 
+            chartPointsIndex = 0;
             chartPaint.setColor(combinedChart.getColors().get(i));
-            chartPath.reset();
+            chartOrdinate = combinedChart.getOrdinates().get(i);
 
-            float previousX;
-            float previousY;
+            previousX = x0 + firstVisiblePointIndex * xStep;
+            pointValue = chartOrdinate.get(firstDateIndex);
+            previousY = height - bottomAxisMargin - pointValue * yStep;
 
-            // put first point
-            float x = x0 + 0;
-            int value = combinedChart.getOrdinates().get(i).get(firstDateIndex);
-            float y = height - bottomAxisMargin - value * yStep;
+            for (int j = firstVisiblePointIndex + 1; j < lastVisiblePointIndex; j++) {
+                nextX = x0 + j * xStep;
+                pointValue = chartOrdinate.get(j);
+                nextY = height - bottomAxisMargin - pointValue * yStep;
 
-            if (x >= 0 && x <= width) {
-                chartPath.moveTo(x, y);
-            }
-            previousX = x;
-            previousY = y;
+                chartPoints[chartPointsIndex++] = previousX;
+                chartPoints[chartPointsIndex++] = previousY;
+                chartPoints[chartPointsIndex++] = nextX;
+                chartPoints[chartPointsIndex++] = nextY;
 
-            // put middle points
-            for (int j = firstDateIndex + 1; j < lastDateIndex; j++) {
-                x = x0 + j * xStep;
-                value = combinedChart.getOrdinates().get(i).get(j);
-                y = height - bottomAxisMargin - value * yStep;
-
-                if (x >= 0 && x <= width) {
-                    // put point
-                    if (chartPath.isEmpty()) {
-                        chartPath.moveTo(previousX, previousY);
-                    }
-
-                    chartPath.lineTo(x, y);
-                }
-
-                if (x > width && previousX <= width) {
-                    chartPath.lineTo(x, y);
-                }
-
-                previousX = x;
-                previousY = y;
+                previousX = nextX;
+                previousY = nextY;
             }
 
-            // put last point
-            x = x0 + enlargedWidth;
-            value = combinedChart.getOrdinates().get(i).get(lastDateIndex);
-            y = height - bottomAxisMargin - value * yStep;
+            nextX = x0 + enlargedWidth;
+            pointValue = chartOrdinate.get(lastVisiblePointIndex);
+            nextY = height - bottomAxisMargin - pointValue * yStep;
 
-            if (previousX <= width) {
-                chartPath.lineTo(x, y);
-            }
+            chartPoints[chartPointsIndex++] = previousX;
+            chartPoints[chartPointsIndex++] = previousY;
+            chartPoints[chartPointsIndex++] = nextX;
+            chartPoints[chartPointsIndex++] = nextY;
 
-            canvas.drawPath(chartPath, chartPaint);
+            canvas.drawLines(chartPoints, chartPaint);
         }
     }
 
@@ -541,6 +541,8 @@ public class ChartView extends View {
         this.chartsVisibility = new boolean[combinedChart.getLabels().size()];
 
         Arrays.fill(chartsVisibility, true);
+
+        linesCount = combinedChart.getLineIds().size();
 
         initVariablesForChartDrawing();
 
