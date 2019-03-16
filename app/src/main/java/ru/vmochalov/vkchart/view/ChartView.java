@@ -150,6 +150,11 @@ public class ChartView extends View {
     }
 
     private void initVariablesForChartDrawing() {
+        initVariablesForHorizontalChartDrawing();
+        initVariablesForVerticalChartDrawing();
+    }
+
+    private void initVariablesForHorizontalChartDrawing() {
         visibleWidth = width * (endPercent - startPercent);
         abscissa = combinedChart.getAbscissa();
 
@@ -162,7 +167,9 @@ public class ChartView extends View {
         enlargedWidth = (float) (width * width / visibleWidth);
 
         x0 = (float) (-enlargedWidth * startPercent);
+    }
 
+    private void initVariablesForVerticalChartDrawing() {
         yStep = (height - bottomAxisMargin - topAxisMargin) / getMaxVisibleValue();
     }
 
@@ -218,6 +225,8 @@ public class ChartView extends View {
 
         int levelDelta = getMaxVisibleValue() / levelsCount;
 
+        if (!areLinesVisible() || levelDelta == 0) levelDelta = 1; // in case user is confused
+
         //calculationg background levels
         for (int i = 0; i < levelsCount; i++) {
             levelValues[i] = levelDelta * i;
@@ -235,6 +244,15 @@ public class ChartView extends View {
         }
 
         canvas.drawPath(path, verticalAxisPaint);
+    }
+
+    private boolean areLinesVisible() {
+        for (boolean visibility : chartsVisibility) {
+            if (visibility) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // todo: Then add support of changing chart visibility from the outside.
@@ -506,6 +524,16 @@ public class ChartView extends View {
         invalidate();
     }
 
+    public void setLineVisibility(String lineId, boolean visible) {
+        int lineIndex = combinedChart.getLineIds().indexOf(lineId);
+
+        if (lineIndex != -1) {
+            chartsVisibility[lineIndex] = visible;
+            initVariablesForVerticalChartDrawing();
+            invalidate();
+        }
+    }
+
     private List<List<Integer>> visiblePointValues = new ArrayList<>();
 
     private int getMaxVisibleValue() {
@@ -527,7 +555,7 @@ public class ChartView extends View {
             }
         }
 
-        return getMaxValue(visiblePointValues);
+        return (visiblePointValues.isEmpty()) ? 0 : getMaxValue(visiblePointValues);
     }
 
     private int getMaxValue(List<List<Integer>> lists) {

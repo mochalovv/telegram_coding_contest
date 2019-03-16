@@ -12,11 +12,12 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import ru.vmochalov.vkchart.dto.CombinedChart;
-import timber.log.Timber;
 
 public class ChartNavigationView extends View {
 
@@ -212,8 +213,6 @@ public class ChartNavigationView extends View {
         }
     }
 
-
-
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
@@ -329,7 +328,6 @@ public class ChartNavigationView extends View {
 
     public void setCombinedChart(CombinedChart combinedChart) {
         this.combinedChart = combinedChart;
-        this.maxValue = combinedChart.getMaxValue();
         this.lastDateIndex = combinedChart.getAbscissa().size() - 1;
 
         this.lastDateIndex = combinedChart.getAbscissa().size() - 1;
@@ -337,15 +335,49 @@ public class ChartNavigationView extends View {
         chartsVisibility = new boolean[combinedChart.getLineIds().size()];
         Arrays.fill(chartsVisibility, true);
 
+        this.maxValue = getMaxVisibleValue();
+
         this.periodStartDateIndex = 20;
         this.periodEndDateIndex = 50;
 
         invalidate();
     }
 
+    public void setLineVisibility(String lineId, boolean visible) {
+        int lineIndex = combinedChart.getLineIds().indexOf(lineId);
+        if (lineIndex > -1) {
+            chartsVisibility[lineIndex] = visible;
+
+            this.maxValue = getMaxVisibleValue();
+        }
+
+        invalidate();
+    }
+
     public void setPeriodChangedListener(PeriodChangedListener listener) {
         this.periodChangedListener = listener;
+    }
 
+    private int getMaxVisibleValue() {
+        List<List<Integer>> visibleLines = new ArrayList<>();
+
+        for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
+            if (chartsVisibility[i]) {
+                visibleLines.add(combinedChart.getOrdinates().get(i));
+            }
+        }
+
+        return (visibleLines.isEmpty()) ? 0 : getMaxValue(visibleLines);
+    }
+
+    private int getMaxValue(List<List<Integer>> lists) {
+        int max = Integer.MIN_VALUE;
+
+        for (List<Integer> list : lists) {
+            max = Math.max(max, Collections.max(list));
+        }
+
+        return max;
     }
 
 }

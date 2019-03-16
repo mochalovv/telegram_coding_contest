@@ -1,15 +1,17 @@
 package ru.vmochalov.vkchart;
 
 import android.app.Activity;
+import android.content.res.ColorStateList;
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.Toast;
 
 import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 import ru.vmochalov.vkchart.dto.CombinedChart;
 import ru.vmochalov.vkchart.view.ChartNavigationView;
@@ -23,8 +25,7 @@ public class ChartActivity extends Activity {
 
     private ChartView chartView;
     private ChartNavigationView chartNavigationView;
-    private CheckBox joinedCheckBox;
-    private CheckBox leftCheckBox;
+    private ViewGroup chartContainer;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -33,28 +34,13 @@ public class ChartActivity extends Activity {
 
         chartView = findViewById(R.id.chart);
         chartNavigationView = findViewById(R.id.chartNavigation);
-        joinedCheckBox = findViewById(R.id.joinedCheckBox);
-        leftCheckBox = findViewById(R.id.leftCheckBox);
+        chartContainer = findViewById(R.id.chartContainer);
 
         initViews();
 
     }
 
     private void initViews() {
-        joinedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                Toast.makeText(ChartActivity.this, "Joined is checked: " + isChecked, Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        leftCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                Toast.makeText(ChartActivity.this, "Left is checked: " + isChecked, Toast.LENGTH_SHORT).show();
-            }
-        });
-
         initChart();
 
         chartNavigationView.setPeriodChangedListener(
@@ -77,19 +63,51 @@ public class ChartActivity extends Activity {
         );
     }
 
-    private void initChart() {
 
-        String json = readInputData();
-
+    private CombinedChart readChartFromAssets() {
         try {
-            CombinedChart chart = CombinedChart.parse(json);
-            chartView.setChart(chart);
-            chartNavigationView.setCombinedChart(chart);
+            return CombinedChart.parse(readInputData());
         } catch (JSONException ex) {
             Timber.e("Can not parse json: " + ex.getMessage());
         }
 
+        return null;
+    }
 
+    private void initChart() {
+
+        final CombinedChart chart = readChartFromAssets();
+
+        if (chart != null) {
+            chartView.setChart(chart);
+            chartNavigationView.setCombinedChart(chart);
+
+            List<String> lineIds = chart.getLineIds();
+            List<String> lineLabels = chart.getLabels();
+            List<Integer> colors = chart.getColors();
+
+            for (int i = 0; i < lineIds.size(); i++) {
+                CheckBox checkBox = new CheckBox(this);
+                checkBox.setText(lineLabels.get(i));
+                checkBox.setTag(lineIds.get(i));
+                checkBox.setButtonTintList(
+                        ColorStateList.valueOf(colors.get(i))
+                );
+                checkBox.setChecked(true);
+                checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        String lineId = buttonView.getTag().toString();
+
+                        chartView.setLineVisibility(lineId, isChecked);
+                        chartNavigationView.setLineVisibility(lineId, isChecked);
+                    }
+                });
+
+                chartContainer.addView(checkBox);
+            }
+
+        }
     }
 
     private String readInputData() {
@@ -102,8 +120,6 @@ public class ChartActivity extends Activity {
             is.read(buffer);
             is.close();
             json = new String(buffer);
-
-//            Timber.d("JSON: " + json);
         } catch (IOException ex) {
             Timber.e("Can not open asset: " + ex.getMessage());
         } finally {
