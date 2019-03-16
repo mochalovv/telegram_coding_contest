@@ -2,6 +2,8 @@ package ru.vmochalov.vkchart.dto;
 
 import org.json.JSONException;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -12,13 +14,16 @@ import java.util.List;
  */
 public class CombinedChart {
 
-    String xId = null;
-    List<String> lineIds = null; //new ArrayList<>();
+    private static DateFormat dateFormat = new SimpleDateFormat("MMM d");
 
-    List<Date> abscissa = new ArrayList<>();
-    List<List<Integer>> ordinates = null; //new HashMap<>();
-    List<String> labels = null; //new ArrayList<>();
-    List<Integer> colors = null; //new ArrayList<>();
+    private String xId;
+    private List<String> lineIds;
+
+    private List<Date> abscissa;
+    private List<String> abscissaAsString;
+    private List<List<Integer>> ordinates;
+    private List<String> labels;
+    private List<Integer> colors;
 
     public static CombinedChart parse(String json) throws JSONException {
         return new ChartParser().fromJson(json);
@@ -38,10 +43,19 @@ public class CombinedChart {
         this.ordinates = ordinates;
         this.labels = labels;
         this.colors = colors;
+
+        this.abscissaAsString = new ArrayList<>();
+        for (Date date : abscissa) {
+            abscissaAsString.add(dateFormat.format(date));
+        }
     }
 
     public List<Date> getAbscissa() {
         return abscissa;
+    }
+
+    public List<String> getAbscissaAsString() {
+        return abscissaAsString;
     }
 
     public List<List<Integer>> getOrdinates() {

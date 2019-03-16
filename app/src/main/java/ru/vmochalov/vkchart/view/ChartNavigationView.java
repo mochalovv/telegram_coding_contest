@@ -164,6 +164,15 @@ public class ChartNavigationView extends View {
                                 double frameStartInPercent = frameStart / width;
                                 double frameEndInPercent = (frameStart + frameWidth) / width;
 
+                                if (frameStartInPercent < 0) {
+                                    frameStartInPercent = 0;
+                                }
+
+                                if (frameEndInPercent > 1) {
+                                    frameEndInPercent = 1;
+                                }
+
+
                                 if (periodChangedListener != null & dx != 0) {
                                     if (touchType == TouchType.FRAME_TOUCH) {
                                         periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
@@ -182,12 +191,28 @@ public class ChartNavigationView extends View {
 
     }
 
+    private boolean initialValueIsSent = false;
+
     public void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
 
         width = right - left;
         height = bottom - top;
+
+        if (!initialValueIsSent) {
+            if (periodChangedListener != null) {
+                double frameStartInPercent = frameStart / width;
+                double frameEndInPercent = (frameStart + frameWidth) / width;
+
+                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+
+                initialValueIsSent = true;
+
+            }
+        }
     }
+
+
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -320,6 +345,7 @@ public class ChartNavigationView extends View {
 
     public void setPeriodChangedListener(PeriodChangedListener listener) {
         this.periodChangedListener = listener;
+
     }
 
 }
