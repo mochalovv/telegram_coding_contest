@@ -55,21 +55,29 @@ public class ChartNavigationView extends View {
     public ChartNavigationView(Context context) {
         super(context);
         initTouchListener();
+
+        initVariableForDrawing();
     }
 
     public ChartNavigationView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         initTouchListener();
+
+        initVariableForDrawing();
     }
 
     public ChartNavigationView(Context context, AttributeSet attributeSet, int defStyleAttr) {
         super(context, attributeSet, defStyleAttr);
         initTouchListener();
+
+        initVariableForDrawing();
     }
 
     public ChartNavigationView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
         super(context, attributeSet, defStyleAttr, defStyleRes);
         initTouchListener();
+
+        initVariableForDrawing();
     }
 
     private enum TouchType {
@@ -241,25 +249,21 @@ public class ChartNavigationView extends View {
     private Rect firstPassiveBackground;
     private Rect secondPassiveBackground;
 
-    private void drawBackground(Canvas canvas) {
+    private void initVariableForDrawing() {
         activeBackgroundPaint.setColor(Color.WHITE); //todo: not only white, but also gray
         activeBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         framePaint.setColor(frameColor);
         framePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+    }
 
-        // draw passive background later, after chart is drawn
-        firstPassiveBackground = new Rect((int) firstPassiveStartPixel, 0, (int) frameStart - 1, (int) height);
-        secondPassiveBackground = new Rect((int) (frameStart + frameWidth), 0, (int) width, (int) height);
-
+    private void drawBackground(Canvas canvas) {
         // draw active background
         canvas.drawRect(0, 0, width, height, activeBackgroundPaint);
 
         // draw frame
-        // todo: should it be path?? or rect??
         canvas.drawRect(frameStart, 0, frameStart + frameWidth - 1, frameVerticalBorderWidth, framePaint);
         canvas.drawRect(frameStart, height - frameVerticalBorderWidth, frameStart + frameWidth - 1, height, framePaint);
-
         canvas.drawRect(frameStart, 0, frameStart + frameHorizontalBorderWidth, height, framePaint);
         canvas.drawRect(frameStart + frameWidth - 1 - frameHorizontalBorderWidth, 0, frameStart + frameWidth - 1, height, framePaint);
     }
@@ -321,6 +325,11 @@ public class ChartNavigationView extends View {
         duff.setStyle(Paint.Style.FILL_AND_STROKE);
         duff.setColor(passiveBackgroundColor);
         duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
+
+
+        // draw passive background later, after chart is drawn
+        firstPassiveBackground = new Rect((int) firstPassiveStartPixel, 0, (int) frameStart - 1, (int) height);
+        secondPassiveBackground = new Rect((int) (frameStart + frameWidth), 0, (int) width, (int) height);
 
         canvas.drawRect(firstPassiveBackground, duff);
         canvas.drawRect(secondPassiveBackground, duff);
