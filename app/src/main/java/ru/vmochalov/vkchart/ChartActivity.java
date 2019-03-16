@@ -76,7 +76,7 @@ public class ChartActivity extends Activity {
 
     private void initChart() {
 
-        CombinedChart chart = readChartFromAssets();
+        final CombinedChart chart = readChartFromAssets();
 
         if (chart != null) {
             chartView.setChart(chart);
@@ -93,9 +93,11 @@ public class ChartActivity extends Activity {
                 checkBox.setButtonTintList(
                         ColorStateList.valueOf(colors.get(i))
                 );
+                checkBox.setChecked(true);
                 checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        chartView.setLineVisibility(buttonView.getTag().toString(), isChecked);
                         Timber.d("Checkbox for line name: " + buttonView.getText() + ", id: " + buttonView.getTag() + " is checked: " + isChecked);
                     }
                 });
@@ -116,8 +118,6 @@ public class ChartActivity extends Activity {
             is.read(buffer);
             is.close();
             json = new String(buffer);
-
-//            Timber.d("JSON: " + json);
         } catch (IOException ex) {
             Timber.e("Can not open asset: " + ex.getMessage());
         } finally {
