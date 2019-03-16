@@ -133,6 +133,8 @@ public class ChartView extends View {
     private int firstVisiblePointIndex;
     private int lastVisiblePointIndex;
 
+    private float horizontalLabelY;
+
     //drawing level lines
     float yDelta;
 
@@ -183,7 +185,7 @@ public class ChartView extends View {
         firstDateIndex = 0;
         lastDateIndex = abscissa.size() - 1;
 
-        xStep = width / abscissa.size();
+        xStep = width / lastDateIndex;
         xStep *= (width / visibleWidth);
 
         enlargedWidth = (float) (width * width / visibleWidth);
@@ -229,6 +231,7 @@ public class ChartView extends View {
         //drawing level lines
         yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
 
+        horizontalLabelY = height - axesTextSize / 2;
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -252,7 +255,6 @@ public class ChartView extends View {
 
 //        drawHorizontalAxisStable(canvas);
         drawChart(canvas);
-        calculateXForLabels();
         drawHorizontalLabels(canvas);
 
         //todo: update look&feel styles: texts, colors, stroke width, spaces, etc...
@@ -461,26 +463,21 @@ public class ChartView extends View {
         return index >= firstDateIndex && index <= lastDateIndex;
     }
 
-    private void calculateXForLabels() {
-        float x;
-
-        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-            x = x0 + xStep * pointIndexesToDrawLabel[i];
-
-            labelXCoords[i] = x;
-        }
-    }
-
     private void drawHorizontalLabels(Canvas canvas) {
-        float labelY = height - axesTextSize / 2;
+        //calculating labels coordinates
+        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
+            labelXCoords[i] = x0 + xStep * pointIndexesToDrawLabel[i];
+        }
 
+        //drawing
         for (int i = 0; i < labelXCoords.length; i++) {
-            int index = pointIndexesToDrawLabel[i];
-
-            if (isPointIndexValid(index)) {
-                String label = combinedChart.getAbscissaAsString().get(index);
-
-                canvas.drawText(label, labelXCoords[i], labelY, labelPaint);
+            if (isPointIndexValid(pointIndexesToDrawLabel[i])) {
+                canvas.drawText(
+                        combinedChart.getAbscissaAsString().get(pointIndexesToDrawLabel[i]),
+                        labelXCoords[i],
+                        horizontalLabelY,
+                        labelPaint
+                );
             }
         }
     }
@@ -505,7 +502,7 @@ public class ChartView extends View {
             chartOrdinate = combinedChart.getOrdinates().get(i);
 
             previousX = x0 + firstVisiblePointIndex * xStep;
-            pointValue = chartOrdinate.get(firstDateIndex);
+            pointValue = chartOrdinate.get(firstVisiblePointIndex);
             previousY = height - bottomAxisMargin - pointValue * yStep;
 
             for (int j = firstVisiblePointIndex + 1; j < lastVisiblePointIndex; j++) {
@@ -522,7 +519,7 @@ public class ChartView extends View {
                 previousY = nextY;
             }
 
-            nextX = x0 + enlargedWidth;
+            nextX = x0 + lastVisiblePointIndex * xStep;
             pointValue = chartOrdinate.get(lastVisiblePointIndex);
             nextY = height - bottomAxisMargin - pointValue * yStep;
 
