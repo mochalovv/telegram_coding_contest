@@ -5,7 +5,6 @@ import org.json.JSONException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -78,14 +77,4 @@ public class CombinedChart {
         return xId;
     }
 
-    public int getMaxValue() {
-        int max = Integer.MIN_VALUE;
-
-        for (List<Integer> list : ordinates) {
-            max = Math.max(max, Collections.max(list));
-        }
-
-        return max;
-
-    }
 }

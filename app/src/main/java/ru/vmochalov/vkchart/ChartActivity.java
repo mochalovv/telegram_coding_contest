@@ -97,8 +97,10 @@ public class ChartActivity extends Activity {
                 checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                        chartView.setLineVisibility(buttonView.getTag().toString(), isChecked);
-                        Timber.d("Checkbox for line name: " + buttonView.getText() + ", id: " + buttonView.getTag() + " is checked: " + isChecked);
+                        String lineId = buttonView.getTag().toString();
+
+                        chartView.setLineVisibility(lineId, isChecked);
+                        chartNavigationView.setLineVisibility(lineId, isChecked);
                     }
                 });
 
