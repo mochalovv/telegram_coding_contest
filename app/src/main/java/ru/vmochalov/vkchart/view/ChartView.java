@@ -18,7 +18,6 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.CombinedChart;
-import timber.log.Timber;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
@@ -124,6 +123,24 @@ public class ChartView extends View {
     private float yStep;
     private List<Date> abscissa;
 
+    private int[] verticalLevelValues; // = new int[levelsCount]; // from bottom to top
+
+    private String[] verticalLevelValuesAsStrings;
+
+    private int verticalLevelDelta;// = getMaxVisibleValue() / levelsCount;
+
+    private float[] verticalAxesLinesCoords;
+
+//        if (!areLinesVisible() || verticalLevelDelta == 0) verticalLevelDelta = 1; // in case user is confused
+
+    //calculationg background levels
+//        for (int i = 0; i < levelsCount; i++) {
+//        verticalLevelValues[i] = verticalLevelDelta * i;
+//    }
+
+    //drawing level lines
+    float yDelta; // = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+
     private void initViewWideProperties() {
         backgroundPaint.setColor(backgroundColor);
         backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
@@ -147,6 +164,16 @@ public class ChartView extends View {
         chartPaint.setStrokeWidth(lineStrokeWidth);
         chartPaint.setStyle(Paint.Style.STROKE);
         chartPaint.setAntiAlias(true);
+
+        debugPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        debugPaint.setColor(Color.LTGRAY);
+
+        verticalAxisPaint.setColor(axesColor);
+        verticalAxisPaint.setTextSize(axisTextSize);
+        verticalAxisPaint.setStrokeWidth(axisStrokeWidth);
+        verticalAxisPaint.setTextAlign(Paint.Align.LEFT);
+        verticalAxisPaint.setAntiAlias(true);
+        verticalAxisPaint.setStyle(Paint.Style.FILL_AND_STROKE);
     }
 
     private void initVariablesForChartDrawing() {
@@ -171,6 +198,28 @@ public class ChartView extends View {
 
     private void initVariablesForVerticalChartDrawing() {
         yStep = (height - bottomAxisMargin - topAxisMargin) / getMaxVisibleValue();
+
+        verticalLevelValues = new int[levelsCount]; // from bottom to top
+
+        verticalLevelValuesAsStrings = new String[levelsCount];
+
+        verticalLevelDelta = getMaxVisibleValue() / levelsCount;
+
+        if (!areLinesVisible() || verticalLevelDelta == 0)
+            verticalLevelDelta = 1; // in case user is confused
+
+        //calculationg background levels
+        for (int i = 0; i < levelsCount; i++) {
+            verticalLevelValues[i] = verticalLevelDelta * i;
+            verticalLevelValuesAsStrings[i] = Integer.toString(verticalLevelDelta * i);
+        }
+
+
+        verticalAxesLinesCoords = new float[levelsCount * 4];
+
+        //drawing level lines
+        yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -189,8 +238,6 @@ public class ChartView extends View {
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        Timber.d("onDraw");
-
         drawBackground(canvas);
         drawVerticalAxis(canvas);
 
@@ -208,42 +255,21 @@ public class ChartView extends View {
         canvas.drawRect(0, 0, width, height, backgroundPaint);
     }
 
+    //to use inside the method only
+    private float verticalYAxisCoord;
+
     private void drawVerticalAxis(Canvas canvas) {
-        debugPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        debugPaint.setColor(Color.LTGRAY);
-
-        //todo: add axes changes when period is changed
-        verticalAxisPaint.setColor(axesColor);
-        verticalAxisPaint.setTextSize(axisTextSize);
-        verticalAxisPaint.setStrokeWidth(axisStrokeWidth);
-        verticalAxisPaint.setTextAlign(Paint.Align.LEFT);
-        verticalAxisPaint.setAntiAlias(true);
-        verticalAxisPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        int[] levelValues = new int[levelsCount]; // from bottom to top
-
-
-        int levelDelta = getMaxVisibleValue() / levelsCount;
-
-        if (!areLinesVisible() || levelDelta == 0) levelDelta = 1; // in case user is confused
-
-        //calculationg background levels
         for (int i = 0; i < levelsCount; i++) {
-            levelValues[i] = levelDelta * i;
+            verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;
+            verticalAxesLinesCoords[4 * i] = 0;
+            verticalAxesLinesCoords[4 * i + 1] = verticalYAxisCoord;
+            verticalAxesLinesCoords[4 * i + 2] = width;
+            verticalAxesLinesCoords[4 * i + 3] = verticalYAxisCoord;
+
+            canvas.drawText(verticalLevelValuesAsStrings[i], axesTextMargin, verticalYAxisCoord - axesTextMargin, verticalAxisPaint);
         }
 
-        //drawing level lines
-        float yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
-
-        Path path = new Path();
-        for (int i = 0; i < levelsCount; i++) {
-            float y = height - bottomAxisMargin - i * yDelta;
-            path.moveTo(0, y);
-            path.lineTo(width, y);
-            canvas.drawText(Integer.toString(levelValues[i]), 0 + axesTextMargin, y - axesTextMargin, verticalAxisPaint);
-        }
-
-        canvas.drawPath(path, verticalAxisPaint);
+        canvas.drawLines(verticalAxesLinesCoords, verticalAxisPaint);
     }
 
     private boolean areLinesVisible() {
@@ -255,7 +281,6 @@ public class ChartView extends View {
         return false;
     }
 
-    // todo: Then add support of changing chart visibility from the outside.
     // todo: then clean code and optimize as possible
     // todo: then unite all in a single ViewGroup
     //todo: then add animations
