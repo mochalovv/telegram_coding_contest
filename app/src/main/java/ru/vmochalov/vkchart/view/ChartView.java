@@ -292,9 +292,11 @@ public class ChartView extends View {
         return false;
     }
 
-    // todo: then clean code and optimize as possible
     // todo: then unite all in a single ViewGroup
+    //todo: add night mode
     //todo: then add animations
+    //todo: handle chartview touches and show points info
+    // todo: clean code, slight renames and refactorings; add some comments
 
     private void drawHorizontalAxisStable(Canvas canvas) {
         int indexOfFirstVisiblePoint = (int) (abscissa.size() * startPercent);
