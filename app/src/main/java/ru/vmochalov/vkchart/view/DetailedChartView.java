@@ -16,12 +16,12 @@ import java.util.Date;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
-import ru.vmochalov.vkchart.dto.CombinedChart;
+import ru.vmochalov.vkchart.dto.Chart;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
  */
-public class InnerChartView extends View {
+class DetailedChartView extends View {
 
     private float height;
 
@@ -31,7 +31,7 @@ public class InnerChartView extends View {
 
     private int axesColor = Color.GRAY;
 
-    private CombinedChart combinedChart;
+    private Chart chart;
 
     private boolean[] chartsVisibility;
 
@@ -40,27 +40,27 @@ public class InnerChartView extends View {
     private int lineStrokeWidth;
     private int axisStrokeWidth;
 
-    public InnerChartView(Context context) {
+    public DetailedChartView(Context context) {
         super(context);
 
         initViewWideProperties();
     }
 
-    public InnerChartView(Context context, AttributeSet attributeSet) {
+    public DetailedChartView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
 
         handleAttributeSet(attributeSet);
         initViewWideProperties();
     }
 
-    public InnerChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
+    public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
         super(context, attributeSet, defStyleAttr);
 
         handleAttributeSet(attributeSet);
         initViewWideProperties();
     }
 
-    public InnerChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
+    public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
         super(context, attributeSet, defStyleAttr, defStyleRes);
 
         handleAttributeSet(attributeSet);
@@ -68,21 +68,21 @@ public class InnerChartView extends View {
     }
 
     private void handleAttributeSet(AttributeSet attributeSet) {
-        TypedArray attributes = getContext().obtainStyledAttributes(attributeSet, R.styleable.InnerChartView);
+        TypedArray attributes = getContext().obtainStyledAttributes(attributeSet, R.styleable.DetailedChartView);
         Resources resources = getContext().getResources();
 
         axisTextSize = attributes.getDimensionPixelSize(
-                R.styleable.InnerChartView_axisTextSize,
+                R.styleable.DetailedChartView_axisTextSize,
                 resources.getDimensionPixelSize(R.dimen.chartViewDefaultTextSize)
         );
 
         lineStrokeWidth = attributes.getDimensionPixelSize(
-                R.styleable.InnerChartView_chartLineWidth,
+                R.styleable.DetailedChartView_chartLineWidth,
                 resources.getDimensionPixelSize(R.dimen.chartViewDefaultLineStrokeWidth)
         );
 
         axisStrokeWidth = attributes.getDimensionPixelSize(
-                R.styleable.InnerChartView_axisLineWidth,
+                R.styleable.DetailedChartView_axisLineWidth,
                 resources.getDimensionPixelSize(R.dimen.chartViewDefaultAxisStrokeWidth)
         );
 
@@ -180,7 +180,7 @@ public class InnerChartView extends View {
 
     private void initVariablesForHorizontalChartDrawing() {
         visibleWidth = width * (endPercent - startPercent);
-        abscissa = combinedChart.getAbscissa();
+        abscissa = chart.getAbscissa();
 
         firstDateIndex = 0;
         lastDateIndex = abscissa.size() - 1;
@@ -304,7 +304,7 @@ public class InnerChartView extends View {
 
         float y = height - axesTextSize / 2;
 
-        String firstLabel = combinedChart.getAbscissaAsString().get(indexOfFirstVisiblePoint);
+        String firstLabel = chart.getAbscissaAsString().get(indexOfFirstVisiblePoint);
         float firstLabelWidth = labelPaint.measureText(firstLabel);
         float firstLabelX = 0 + firstLabelWidth / 2;
 
@@ -318,7 +318,7 @@ public class InnerChartView extends View {
         canvas.drawText(firstLabel, firstLabelX, y, labelPaint);
 
 
-        String lastLabel = combinedChart.getAbscissaAsString().get(indexOfLastVisiblePoint);
+        String lastLabel = chart.getAbscissaAsString().get(indexOfLastVisiblePoint);
         float lastLabelWidth = labelPaint.measureText(lastLabel);
         float lastLabelX = width - lastLabelWidth / 2;
 
@@ -346,7 +346,7 @@ public class InnerChartView extends View {
 
         for (int i = 0; i < absLevelsCount - 2; i++) {
             pointIndexToDraw = (int) (indexOfFirstVisiblePoint + pointsInOnePartition * (i + 1));
-            String label = combinedChart.getAbscissaAsString().get(pointIndexToDraw);
+            String label = chart.getAbscissaAsString().get(pointIndexToDraw);
             float labelWidth = labelPaint.measureText(label);
             float x = firstLabelWidth + (middleLabelSpaceWidth / 2 - firstLabelWidth / 2) + middleLabelSpaceWidthUpdated * i + (middleLabelSpaceWidthUpdated / 2);
 
@@ -434,7 +434,7 @@ public class InnerChartView extends View {
 
     private boolean isPointLabelNotVisibleYet(int pointIndex) {
         if (isPointIndexValid(pointIndex)) {
-            String label = combinedChart.getAbscissaAsString().get(pointIndex);
+            String label = chart.getAbscissaAsString().get(pointIndex);
 
             float labelWidth = labelPaint.measureText(label);
 
@@ -449,7 +449,7 @@ public class InnerChartView extends View {
 
     private boolean isPointLabelNotVisibleAlready(int pointIndex) {
         if (isPointIndexValid(pointIndex)) {
-            String label = combinedChart.getAbscissaAsString().get(pointIndex);
+            String label = chart.getAbscissaAsString().get(pointIndex);
 
             float labelWidth = labelPaint.measureText(label);
 
@@ -475,7 +475,7 @@ public class InnerChartView extends View {
         for (int i = 0; i < labelXCoords.length; i++) {
             if (isPointIndexValid(pointIndexesToDrawLabel[i])) {
                 canvas.drawText(
-                        combinedChart.getAbscissaAsString().get(pointIndexesToDrawLabel[i]),
+                        chart.getAbscissaAsString().get(pointIndexesToDrawLabel[i]),
                         labelXCoords[i],
                         horizontalLabelY,
                         labelPaint
@@ -500,8 +500,8 @@ public class InnerChartView extends View {
             }
 
             chartPointsIndex = 0;
-            chartPaint.setColor(combinedChart.getColors().get(i));
-            chartOrdinate = combinedChart.getOrdinates().get(i);
+            chartPaint.setColor(chart.getColors().get(i));
+            chartOrdinate = chart.getOrdinates().get(i);
 
             previousX = x0 + firstVisiblePointIndex * xStep;
             pointValue = chartOrdinate.get(firstVisiblePointIndex);
@@ -534,14 +534,14 @@ public class InnerChartView extends View {
         }
     }
 
-    public void setChart(CombinedChart combinedChart) {
-        this.combinedChart = combinedChart;
+    public void setChart(Chart chart) {
+        this.chart = chart;
 
-        this.chartsVisibility = new boolean[combinedChart.getLabels().size()];
+        this.chartsVisibility = new boolean[chart.getLabels().size()];
 
         Arrays.fill(chartsVisibility, true);
 
-        linesCount = combinedChart.getLineIds().size();
+        linesCount = chart.getLineIds().size();
 
         initVariablesForChartDrawing();
 
@@ -551,7 +551,7 @@ public class InnerChartView extends View {
     }
 
     public void setLineVisibility(String lineId, boolean visible) {
-        int lineIndex = combinedChart.getLineIds().indexOf(lineId);
+        int lineIndex = chart.getLineIds().indexOf(lineId);
 
         if (lineIndex != -1) {
             chartsVisibility[lineIndex] = visible;
@@ -564,7 +564,7 @@ public class InnerChartView extends View {
 
     private int getMaxVisibleValue() {
 
-        int absSize = combinedChart.getAbscissa().size();
+        int absSize = chart.getAbscissa().size();
 
         int firstVisiblePointIndex = (int) (absSize * startPercent);
         int lastVisiblePointIndex = (int) Math.ceil(absSize * endPercent);
@@ -575,9 +575,9 @@ public class InnerChartView extends View {
 
         visiblePointValues.clear();
 
-        for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
+        for (int i = 0; i < chart.getLineIds().size(); i++) {
             if (chartsVisibility[i]) {
-                visiblePointValues.add(combinedChart.getOrdinates().get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
+                visiblePointValues.add(chart.getOrdinates().get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
             }
         }
 

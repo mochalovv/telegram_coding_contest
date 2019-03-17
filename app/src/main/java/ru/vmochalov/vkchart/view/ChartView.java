@@ -13,7 +13,7 @@ import org.json.JSONException;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
-import ru.vmochalov.vkchart.dto.CombinedChart;
+import ru.vmochalov.vkchart.dto.Chart;
 import timber.log.Timber;
 
 /**
@@ -21,8 +21,9 @@ import timber.log.Timber;
  */
 public class ChartView extends LinearLayout {
 
-    private InnerChartView innerChartView;
+    private DetailedChartView detailedChartView;
     private ChartNavigationView chartNavigationView;
+    private LinearLayout chartContainer;
 
     public ChartView(Context context) {
         super(context);
@@ -59,19 +60,20 @@ public class ChartView extends LinearLayout {
     }
 
     private void initInnerViews() {
-        innerChartView = findViewById(R.id.chart);
+        detailedChartView = findViewById(R.id.chart);
         chartNavigationView = findViewById(R.id.chartNavigation);
+        chartContainer = findViewById(R.id.chartContainer);
 
         chartNavigationView.setPeriodChangedListener(
                 new ChartNavigationView.PeriodChangedListener() {
                     @Override
                     public void onPeriodLengthChanged(double periodStart, double periodEnd) {
-                        innerChartView.onVisibleRangeScaleChanged(periodStart, periodEnd);
+                        detailedChartView.onVisibleRangeScaleChanged(periodStart, periodEnd);
                     }
 
                     @Override
                     public void onPeriodMoved(double periodStart, double periodEnd) {
-                        innerChartView.onVisibleRangeMoved(periodStart, periodEnd);
+                        detailedChartView.onVisibleRangeMoved(periodStart, periodEnd);
                     }
 
                     @Override
@@ -83,11 +85,11 @@ public class ChartView extends LinearLayout {
     }
 
     public void setChartData(String jsonSource) {
-        CombinedChart chart = parseChartFromJson(jsonSource);
+        Chart chart = parseChartFromJson(jsonSource);
 
         if (chart != null) {
-            innerChartView.setChart(chart);
-            chartNavigationView.setCombinedChart(chart);
+            detailedChartView.setChart(chart);
+            chartNavigationView.setChart(chart);
 
             List<String> lineIds = chart.getLineIds();
             List<String> lineLabels = chart.getLabels();
@@ -106,19 +108,19 @@ public class ChartView extends LinearLayout {
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                         String lineId = buttonView.getTag().toString();
 
-                        innerChartView.setLineVisibility(lineId, isChecked);
+                        detailedChartView.setLineVisibility(lineId, isChecked);
                         chartNavigationView.setLineVisibility(lineId, isChecked);
                     }
                 });
 
-                addView(checkBox);
+                chartContainer.addView(checkBox);
             }
         }
     }
 
-    private CombinedChart parseChartFromJson(String jsonSource) {
+    private Chart parseChartFromJson(String jsonSource) {
         try {
-            return CombinedChart.parse(jsonSource);
+            return Chart.parse(jsonSource);
         } catch (
                 JSONException ex) {
             Timber.e("Can not parse json: " + ex.getMessage());

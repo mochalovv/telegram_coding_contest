@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="InnerChartView">
+    <declare-styleable name="DetailedChartView">
         <attr name="axisTextSize" format="dimension" />
         <attr name="axisLineWidth" format="dimension" />
         <attr name="chartLineWidth" format="dimension" />
