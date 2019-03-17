@@ -4,10 +4,8 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -33,12 +31,14 @@ public class ChartNavigationView extends View {
 
     private CombinedChart combinedChart;
 
-    private boolean[] chartsVisibility;
+    private boolean[] lineVisibility;
 
     // styleable attributes
     private float lineStrokeWidth = 5;
     private float frameHorizontalBorderWidth = 10;
     private float frameVerticalBorderWidth = 4;
+
+    private int linesCount;
 
     private PeriodChangedListener periodChangedListener;
 
@@ -236,18 +236,20 @@ public class ChartNavigationView extends View {
 
     private Paint activeBackgroundPaint = new Paint();
     private Paint framePaint = new Paint();
+    private Paint duff = new Paint();
+    private Paint chartPaintActive = new Paint();
 
     float firstPassiveStartPixel = 0;
-    //    float activeStartPixel = 200;
     float frameStart = 200;
     float frameWidth = 300;
-//    float secondPassiveStartPixel = 500;
 
     private int frameColor = Color.rgb(219, 231, 240);
     private int passiveBackgroundColor = Color.argb(0xa0, 245, 248, 249);
 
-    private Rect firstPassiveBackground;
-    private Rect secondPassiveBackground;
+    private float xStep;
+    private float yStep;
+
+    private float[] chartPoints;
 
     private void initVariableForDrawing() {
         activeBackgroundPaint.setColor(Color.WHITE); //todo: not only white, but also gray
@@ -255,6 +257,19 @@ public class ChartNavigationView extends View {
 
         framePaint.setColor(frameColor);
         framePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        chartPaintActive.setStyle(Paint.Style.STROKE);
+        chartPaintActive.setStrokeWidth(lineWidth);
+
+        duff.setStyle(Paint.Style.FILL_AND_STROKE);
+        duff.setColor(passiveBackgroundColor);
+        duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
+    }
+
+    private void onLinesChanged() {
+        if (height != 0) {
+            yStep = (height - topChartPadding - bottomChartPadding) / maxValue;
+        }
     }
 
     private void drawBackground(Canvas canvas) {
@@ -271,83 +286,83 @@ public class ChartNavigationView extends View {
     private float topChartPadding = 3;
     private float bottomChartPadding = 3;
 
-    private Paint chartPaintActive = new Paint();
     private float lineWidth = 2;
+
+    private float previousX;
+    private float previousY;
+    private float nextX;
+    private float nextY;
+    private int chartPointsIndex;
+    private List<Integer> chartOrdinate;
 
     public void drawChart(Canvas canvas) {
 
-        chartPaintActive.setStyle(Paint.Style.STROKE);
-        chartPaintActive.setStrokeWidth(lineWidth);
+        if (xStep == 0 && width != 0) {
+            xStep = width / lastDateIndex;
+        }
 
-        float xStep = width / lastDateIndex;
-        float yStep = (height - topChartPadding - bottomChartPadding) / maxValue;
+        if (yStep == 0 && height != 0) {
+            yStep = (height - topChartPadding - bottomChartPadding) / maxValue;
+        }
 
-        Path activePath = new Path();
+        for (int lineIndex = 0; lineIndex < linesCount; lineIndex++) {
+            if (!lineVisibility[lineIndex]) continue; // do not show muted lines
 
-        for (int chartIndex = 0; chartIndex < combinedChart.getLineIds().size(); chartIndex++) {
+            chartOrdinate = combinedChart.getOrdinates().get(lineIndex);
+            chartPaintActive.setColor(combinedChart.getColors().get(lineIndex));
 
-            if (!chartsVisibility[chartIndex]) continue; // do not show muted charts
-
-            int color = combinedChart.getColors().get(chartIndex);
-            chartPaintActive.setColor(color);
-
-            activePath.reset();
-
-            List<Integer> ordinate = combinedChart.getOrdinates().get(chartIndex);
-
-            //put first point
-            float x;
-            float y;
+            chartPointsIndex = 0;
 
             for (int j = 0; j <= lastDateIndex; j++) {
                 if (j == 0) {
-                    x = 0;
-                    y = 0 + height + topChartPadding - ordinate.get(0) * yStep;
+                    previousX = 0;
+                    previousY = height + topChartPadding - chartOrdinate.get(0) * yStep;
                 } else if (j == lastDateIndex) {
-                    x = width; // todo: or width - 1??
-                    y = 0 + height + topChartPadding - ordinate.get(lastDateIndex) * yStep;
-                } else {
-                    x = j * xStep;
-                    y = height + topChartPadding - ordinate.get(j) * yStep;
-                }
+                    nextX = width; // todo: or width - 1??
+                    nextY = height + topChartPadding - chartOrdinate.get(lastDateIndex) * yStep;
 
-                if (j == 0) {
-                    activePath.moveTo(x, y);
+                    chartPoints[chartPointsIndex++] = previousX;
+                    chartPoints[chartPointsIndex++] = previousY;
+                    chartPoints[chartPointsIndex++] = nextX;
+                    chartPoints[chartPointsIndex++] = nextY;
                 } else {
-                    activePath.lineTo(x, y);
+                    nextX = j * xStep;
+                    nextY = height + topChartPadding - chartOrdinate.get(j) * yStep;
+
+                    chartPoints[chartPointsIndex++] = previousX;
+                    chartPoints[chartPointsIndex++] = previousY;
+                    chartPoints[chartPointsIndex++] = nextX;
+                    chartPoints[chartPointsIndex++] = nextY;
+
+                    previousX = nextX;
+                    previousY = nextY;
                 }
             }
-
-            canvas.drawPath(activePath, chartPaintActive);
+            canvas.drawLines(chartPoints, chartPaintActive);
         }
 
-        Paint duff = new Paint();
-        duff.setStyle(Paint.Style.FILL_AND_STROKE);
-        duff.setColor(passiveBackgroundColor);
-        duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
-
-
-        // draw passive background later, after chart is drawn
-        firstPassiveBackground = new Rect((int) firstPassiveStartPixel, 0, (int) frameStart - 1, (int) height);
-        secondPassiveBackground = new Rect((int) (frameStart + frameWidth), 0, (int) width, (int) height);
-
-        canvas.drawRect(firstPassiveBackground, duff);
-        canvas.drawRect(secondPassiveBackground, duff);
+        // draw semitransparent background
+        canvas.drawRect((int) firstPassiveStartPixel, 0, (int) frameStart - 1, (int) height, duff);
+        canvas.drawRect((int) (frameStart + frameWidth), 0, (int) width, (int) height, duff);
     }
 
     public void setCombinedChart(CombinedChart combinedChart) {
         this.combinedChart = combinedChart;
         this.lastDateIndex = combinedChart.getAbscissa().size() - 1;
 
-        this.lastDateIndex = combinedChart.getAbscissa().size() - 1;
-
-        chartsVisibility = new boolean[combinedChart.getLineIds().size()];
-        Arrays.fill(chartsVisibility, true);
+        lineVisibility = new boolean[combinedChart.getLineIds().size()];
+        Arrays.fill(lineVisibility, true);
 
         this.maxValue = getMaxVisibleValue();
-
         this.periodStartDateIndex = 20;
         this.periodEndDateIndex = 50;
+
+        linesCount = combinedChart.getLineIds().size();
+        chartPoints = new float[4 * combinedChart.getAbscissa().size()];
+
+        xStep = width / lastDateIndex;
+
+        onLinesChanged();
 
         invalidate();
     }
@@ -355,9 +370,10 @@ public class ChartNavigationView extends View {
     public void setLineVisibility(String lineId, boolean visible) {
         int lineIndex = combinedChart.getLineIds().indexOf(lineId);
         if (lineIndex > -1) {
-            chartsVisibility[lineIndex] = visible;
+            lineVisibility[lineIndex] = visible;
 
-            this.maxValue = getMaxVisibleValue();
+            maxValue = getMaxVisibleValue();
+            onLinesChanged();
         }
 
         invalidate();
@@ -371,7 +387,7 @@ public class ChartNavigationView extends View {
         List<List<Integer>> visibleLines = new ArrayList<>();
 
         for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
-            if (chartsVisibility[i]) {
+            if (lineVisibility[i]) {
                 visibleLines.add(combinedChart.getOrdinates().get(i));
             }
         }
