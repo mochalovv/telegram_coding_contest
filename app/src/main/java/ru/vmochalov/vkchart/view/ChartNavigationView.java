@@ -16,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 import ru.vmochalov.vkchart.dto.Chart;
+import timber.log.Timber;
 
 class ChartNavigationView extends View {
 
@@ -223,6 +224,7 @@ class ChartNavigationView extends View {
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
 
+        Timber.d("onMeasure; widthMeasureSpec: " + MeasureSpec.toString(widthMeasureSpec) + ", heightMeasureSpec: " + MeasureSpec.toString(heightMeasureSpec));
         //todo: send prefered size as in arrival
     }
 
