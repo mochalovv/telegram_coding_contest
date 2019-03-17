@@ -84,15 +84,13 @@ public class ChartNavigationView extends View {
         LEFT_BORDER_TOUCH, FRAME_TOUCH, RIGHT_BORDER_TOUCH, UNHANDLED_TOUCH
     }
 
+    private float borderTouchArea = 20; //px
+    private float minimumFrameWidth = 40; // px
+
     private void initTouchListener() {
         setOnTouchListener(
                 new OnTouchListener() {
 
-                    private float borderTouchArea = 20; //px
-
-                    private float minimumFrameWidth = 40; // px
-
-                    //                    private boolean isTouchHandled = false;
                     private TouchType touchType;
 
                     private float previousX;
@@ -116,7 +114,6 @@ public class ChartNavigationView extends View {
                                 touchType = TouchType.UNHANDLED_TOUCH;
                             }
 
-//                            Timber.d("touchType: " + touchType);
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
 
                             if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
@@ -191,7 +188,9 @@ public class ChartNavigationView extends View {
                                 }
                             }
 
-                            ChartNavigationView.this.invalidate();
+                            if (dx != 0) {
+                                ChartNavigationView.this.invalidate();
+                            }
                         }
                         return true;
                     }
