@@ -15,9 +15,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import ru.vmochalov.vkchart.dto.CombinedChart;
+import ru.vmochalov.vkchart.dto.Chart;
 
-public class ChartNavigationView extends View {
+class ChartNavigationView extends View {
 
     private float width;
     private float height;
@@ -29,7 +29,7 @@ public class ChartNavigationView extends View {
 
     private int maxValue;
 
-    private CombinedChart combinedChart;
+    private Chart chart;
 
     private boolean[] lineVisibility;
 
@@ -39,6 +39,9 @@ public class ChartNavigationView extends View {
     private float frameVerticalBorderWidth = 4;
 
     private int linesCount;
+
+    //todo: obtain from resources
+    private int prefferedHeight = 75;
 
     private PeriodChangedListener periodChangedListener;
 
@@ -221,9 +224,13 @@ public class ChartNavigationView extends View {
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : prefferedHeight;
+        int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
 
-        //todo: send prefered size as in arrival
+        measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
+        measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
+
+        setMeasuredDimension(measuredWidth, measuredHeight);
     }
 
     public void onDraw(Canvas canvas) {
@@ -307,8 +314,8 @@ public class ChartNavigationView extends View {
         for (int lineIndex = 0; lineIndex < linesCount; lineIndex++) {
             if (!lineVisibility[lineIndex]) continue; // do not show muted lines
 
-            chartOrdinate = combinedChart.getOrdinates().get(lineIndex);
-            chartPaintActive.setColor(combinedChart.getColors().get(lineIndex));
+            chartOrdinate = chart.getOrdinates().get(lineIndex);
+            chartPaintActive.setColor(chart.getColors().get(lineIndex));
 
             chartPointsIndex = 0;
 
@@ -345,19 +352,19 @@ public class ChartNavigationView extends View {
         canvas.drawRect((int) (frameStart + frameWidth), 0, (int) width, (int) height, duff);
     }
 
-    public void setCombinedChart(CombinedChart combinedChart) {
-        this.combinedChart = combinedChart;
-        this.lastDateIndex = combinedChart.getAbscissa().size() - 1;
+    public void setChart(Chart chart) {
+        this.chart = chart;
+        this.lastDateIndex = chart.getAbscissa().size() - 1;
 
-        lineVisibility = new boolean[combinedChart.getLineIds().size()];
+        lineVisibility = new boolean[chart.getLineIds().size()];
         Arrays.fill(lineVisibility, true);
 
         this.maxValue = getMaxVisibleValue();
         this.periodStartDateIndex = 20;
         this.periodEndDateIndex = 50;
 
-        linesCount = combinedChart.getLineIds().size();
-        chartPoints = new float[4 * combinedChart.getAbscissa().size()];
+        linesCount = chart.getLineIds().size();
+        chartPoints = new float[4 * chart.getAbscissa().size()];
 
         xStep = width / lastDateIndex;
 
@@ -367,7 +374,7 @@ public class ChartNavigationView extends View {
     }
 
     public void setLineVisibility(String lineId, boolean visible) {
-        int lineIndex = combinedChart.getLineIds().indexOf(lineId);
+        int lineIndex = chart.getLineIds().indexOf(lineId);
         if (lineIndex > -1) {
             lineVisibility[lineIndex] = visible;
 
@@ -385,9 +392,9 @@ public class ChartNavigationView extends View {
     private int getMaxVisibleValue() {
         List<List<Integer>> visibleLines = new ArrayList<>();
 
-        for (int i = 0; i < combinedChart.getLineIds().size(); i++) {
+        for (int i = 0; i < chart.getLineIds().size(); i++) {
             if (lineVisibility[i]) {
-                visibleLines.add(combinedChart.getOrdinates().get(i));
+                visibleLines.add(chart.getOrdinates().get(i));
             }
         }
 

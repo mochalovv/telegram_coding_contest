@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
  */
-public class CombinedChart {
+public class Chart {
 
     private static DateFormat dateFormat = new SimpleDateFormat("MMM d");
 
@@ -24,11 +24,11 @@ public class CombinedChart {
     private List<String> labels;
     private List<Integer> colors;
 
-    public static CombinedChart parse(String json) throws JSONException {
+    public static Chart parse(String json) throws JSONException {
         return new ChartParser().fromJson(json);
     }
 
-    CombinedChart(
+    Chart(
             String xId,
             List<String> lineIds,
             List<Date> abscissa,

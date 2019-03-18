@@ -20,17 +20,14 @@ import timber.log.Timber;
  */
 class ChartParser {
 
-    public CombinedChart fromJson(String json) throws JSONException {
+    public Chart fromJson(String json) throws JSONException {
 
         String xId = null;
         List<String> lineIds = new ArrayList<>();
-
-//        Map<String, Integer> lineIndexes = new HashMap<>();// = new HashMap<String, Integer>(); // id -> index
-
         List<Date> abscissa = new ArrayList<>();
-        List<List<Integer>> ordinates = null; //= new HashMap<>();
-        List<String> labels = null;// = new ArrayList<>();
-        List<Integer> colors = null;// = new ArrayList<>();
+        List<List<Integer>> ordinates = null;
+        List<String> labels = null;
+        List<Integer> colors = null;
 
         JSONTokener tokener = new JSONTokener(json);
 
@@ -46,7 +43,6 @@ class ChartParser {
                     String nextType = types.getString(nextKey);
 
                     if (nextType.equals("line")) {
-//                        lineIndexes.put(nextKey)
                         lineIds.add(nextKey);
                     } else if (xId == null && nextType.equals("x")) {
                         xId = nextKey;
@@ -103,7 +99,7 @@ class ChartParser {
         Timber.d("abscissa: " + abscissa);
         Timber.d("ordinates: " + ordinates);
 
-        return new CombinedChart(xId, lineIds, abscissa, ordinates, labels, colors);
+        return new Chart(xId, lineIds, abscissa, ordinates, labels, colors);
     }
 
 

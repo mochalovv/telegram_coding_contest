@@ -1,24 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/chartContainer"
+<ru.vmochalov.vkchart.view.ChartView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/chartView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@android:color/holo_blue_light"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:layout_height="wrap_content">
 
-    <ru.vmochalov.vkchart.view.ChartView
-        android:id="@+id/chart"
-        android:layout_width="match_parent"
-        android:layout_height="200dp" />
-
-    <!--app:axisTextSize="8dp"-->
-
-    <ru.vmochalov.vkchart.view.ChartNavigationView
-        android:id="@+id/chartNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="50dp"
-        android:layout_marginTop="16dp" />
-
-    <!-- place to add come CheckBoxes-->
-</LinearLayout>
+</ru.vmochalov.vkchart.view.ChartView>
