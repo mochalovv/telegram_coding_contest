@@ -2,8 +2,10 @@ package ru.vmochalov.vkchart.view;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
@@ -84,6 +86,7 @@ public class ChartView extends LinearLayout {
         );
     }
 
+
     public void setChartData(String jsonSource) {
         Chart chart = parseChartFromJson(jsonSource);
 
@@ -114,6 +117,20 @@ public class ChartView extends LinearLayout {
                 });
 
                 chartContainer.addView(checkBox);
+            }
+        }
+    }
+
+    public void setNightMode(boolean nightModeOn) {
+        detailedChartView.setNightMode(nightModeOn);
+        chartNavigationView.setNightMode(nightModeOn);
+
+        setBackgroundColor(getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground));
+
+        for (int i = 0; i < chartContainer.getChildCount(); i++) {
+            View view = chartContainer.getChildAt(i);
+            if (view instanceof CheckBox) {
+                ((CheckBox) view).setTextColor(nightModeOn ? Color.WHITE : Color.BLACK);
             }
         }
     }

@@ -24,12 +24,7 @@ import ru.vmochalov.vkchart.dto.Chart;
 class DetailedChartView extends View {
 
     private float height;
-
     private float width;
-
-    private int backgroundColor = Color.WHITE;
-
-    private int axesColor = Color.GRAY;
 
     private Chart chart;
 
@@ -94,16 +89,17 @@ class DetailedChartView extends View {
     private Paint debugPaint = new Paint();
     private Paint labelPaint = new Paint();
     private Paint verticalAxisPaint = new Paint();
+    private Paint verticalLabelsPaint = new Paint();
 
     private int absLevelsCount;
 
     private float[] labelXCoords;
 
-    private int bottomAxisMargin = 40;
+    private int bottomAxisMargin = 40 + 20;
     private int topAxisMargin = 40;
     private int levelsCount = 6;
     private int axesTextSize = 20;
-    private int axesTextMargin = 4;
+    private int axesTextMargin = 12;
 
     private double startPercent;
     private double endPercent;
@@ -143,7 +139,7 @@ class DetailedChartView extends View {
     float yDelta;
 
     private void initViewWideProperties() {
-        backgroundPaint.setColor(backgroundColor);
+        backgroundPaint.setColor(getResources().getColor(R.color.lightThemeChartBackground));
         backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         absLevelsCount = 6;
@@ -151,11 +147,11 @@ class DetailedChartView extends View {
         labelXCoords = new float[absLevelsCount + 2];
 
         labelPaint.setTextAlign(Paint.Align.CENTER);
-        labelPaint.setColor(axesColor);
+        labelPaint.setColor(getResources().getColor(R.color.lightThemeLabelText));
         labelPaint.setTextSize(axisTextSize);
         labelPaint.setStrokeWidth(axisStrokeWidth);
         labelPaint.setAntiAlias(true);
-        labelPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        labelPaint.setStyle(Paint.Style.FILL);
 
         startPercent = 0;
         endPercent = 1;
@@ -169,12 +165,17 @@ class DetailedChartView extends View {
         debugPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         debugPaint.setColor(Color.LTGRAY);
 
-        verticalAxisPaint.setColor(axesColor);
-        verticalAxisPaint.setTextSize(axisTextSize);
+        verticalAxisPaint.setColor(getResources().getColor(R.color.lightThemeAxis));
         verticalAxisPaint.setStrokeWidth(axisStrokeWidth);
-        verticalAxisPaint.setTextAlign(Paint.Align.LEFT);
         verticalAxisPaint.setAntiAlias(true);
         verticalAxisPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        verticalLabelsPaint.setColor(getResources().getColor(R.color.lightThemeLabelText));
+        verticalLabelsPaint.setTextSize(axisTextSize);
+        verticalLabelsPaint.setStrokeWidth(axisStrokeWidth);
+        verticalLabelsPaint.setTextAlign(Paint.Align.LEFT);
+        verticalLabelsPaint.setAntiAlias(true);
+        verticalLabelsPaint.setStyle(Paint.Style.FILL);
     }
 
     private void initVariablesForChartDrawing() {
@@ -239,10 +240,10 @@ class DetailedChartView extends View {
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int measuredWidth = MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(widthMeasureSpec) : prefferedWidth;
-        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int) (measuredWidth * 0.62);
-
+        int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
         measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
+
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : measuredWidth;
         measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
 
         setMeasuredDimension(measuredWidth, measuredHeight);
@@ -261,12 +262,10 @@ class DetailedChartView extends View {
         drawBackground(canvas);
         drawVerticalAxis(canvas);
 
-//        drawHorizontalAxisStable(canvas);
         drawChart(canvas);
+
+        drawVerticalLabels(canvas);
         drawHorizontalLabels(canvas);
-
-        //todo: update look&feel styles: texts, colors, stroke width, spaces, etc...
-
     }
 
 
@@ -284,11 +283,16 @@ class DetailedChartView extends View {
             verticalAxesLinesCoords[4 * i + 1] = verticalYAxisCoord;
             verticalAxesLinesCoords[4 * i + 2] = width;
             verticalAxesLinesCoords[4 * i + 3] = verticalYAxisCoord;
-
-            canvas.drawText(verticalLevelValuesAsStrings[i], axesTextMargin, verticalYAxisCoord - axesTextMargin, verticalAxisPaint);
         }
 
         canvas.drawLines(verticalAxesLinesCoords, verticalAxisPaint);
+    }
+
+    private void drawVerticalLabels(Canvas canvas) {
+        for (int i = 0; i < levelsCount; i++) {
+            verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;
+            canvas.drawText(verticalLevelValuesAsStrings[i], 0, verticalYAxisCoord - axesTextMargin, verticalLabelsPaint);
+        }
     }
 
     private boolean areLinesVisible() {
@@ -300,7 +304,6 @@ class DetailedChartView extends View {
         return false;
     }
 
-    //todo: add night mode
     //todo: then add animations
     //todo: handle chartview touches and show points info
     // todo: clean code, slight renames and refactorings; add some comments
@@ -599,6 +602,22 @@ class DetailedChartView extends View {
         }
 
         return max;
+    }
+
+    private boolean nightModeOn;
+
+    public void setNightMode(boolean nightModeOn) {
+        this.nightModeOn = nightModeOn;
+
+        int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
+        int verticalAxisColor = getResources().getColor(nightModeOn ? R.color.darkThemeAxis : R.color.lightThemeAxis);
+        int labelsColor = getResources().getColor(nightModeOn ? R.color.darkThemeLabelText : R.color.lightThemeLabelText);
+        backgroundPaint.setColor(backgroundColor);
+        verticalAxisPaint.setColor(verticalAxisColor);
+        labelPaint.setColor(labelsColor);
+        verticalLabelsPaint.setColor(labelsColor);
+
+        invalidate();
     }
 
 }

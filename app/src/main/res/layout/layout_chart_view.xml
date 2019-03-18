@@ -3,7 +3,6 @@
     android:id="@+id/chartContainer"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@android:color/holo_blue_light"
     android:orientation="vertical"
     android:padding="16dp">
 
@@ -12,13 +11,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <!--app:axisTextSize="8dp"-->
-
     <ru.vmochalov.vkchart.view.ChartNavigationView
         android:id="@+id/chartNavigation"
         android:layout_width="match_parent"
         android:layout_height="@dimen/chartNavigationViewHeight"
-        android:layout_marginTop="16dp" />
-    <!--50dp-->
-    <!-- place to add some CheckBoxes-->
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp" />
+
 </LinearLayout>
