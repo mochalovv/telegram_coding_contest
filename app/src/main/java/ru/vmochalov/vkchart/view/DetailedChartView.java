@@ -300,7 +300,6 @@ class DetailedChartView extends View {
         return false;
     }
 
-    // todo: then unite all in a single ViewGroup
     //todo: add night mode
     //todo: then add animations
     //todo: handle chartview touches and show points info
