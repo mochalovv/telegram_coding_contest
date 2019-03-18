@@ -17,7 +17,6 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.Chart;
-import timber.log.Timber;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
@@ -136,6 +135,10 @@ class DetailedChartView extends View {
 
     private float horizontalLabelY;
 
+    //todo: obtain from resources
+    int prefferedHeight = 400;
+    int prefferedWidth = 800;
+
     //drawing level lines
     float yDelta;
 
@@ -236,38 +239,14 @@ class DetailedChartView extends View {
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int measuredWidth = MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(widthMeasureSpec) : prefferedWidth;
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int) (measuredWidth * 0.62);
 
-//        MeasureSpec heightMeasureSpec = MeasureSpec.
-//        MeasureSpec.toString(heightMeasureSpec)
-        Timber.d("onMeasure; widthMeasureSpec: " + MeasureSpec.toString(widthMeasureSpec) + ", heightMeasureSpec: " + MeasureSpec.toString(heightMeasureSpec));
-        //todo: send preferred size
+        measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
+        measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
 
-//        if ()
-
-        int prefferedHeight = 400;
-        int prefferedWidth = 800;
-
-
-
-        int measuredWidth;
-        int measuredHeight;
-
-        // todo: set measured dimensions here
         setMeasuredDimension(measuredWidth, measuredHeight);
-
-        /*
-        todo: read about it
-        If this method is overridden, it is the subclass's responsibility to make sure
-        the measured height and width are at least
-        the view's minimum height and width (getSuggestedMinimumHeight() and getSuggestedMinimumWidth()).
-         */
-
     }
-
-//    public void get
-
-
 
     public void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);

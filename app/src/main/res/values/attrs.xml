@@ -7,8 +7,4 @@
         <attr name="chartLineWidth" format="dimension" />
     </declare-styleable>
 
-    <dimen name="chartViewDefaultTextSize">10sp</dimen>
-    <dimen name="chartViewDefaultAxisStrokeWidth">1px</dimen>
-    <dimen name="chartViewDefaultLineStrokeWidth">2dp</dimen>
-
 </resources>

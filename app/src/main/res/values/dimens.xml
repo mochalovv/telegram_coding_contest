@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="chartViewDefaultTextSize">10sp</dimen>
+    <dimen name="chartViewDefaultAxisStrokeWidth">1px</dimen>
+    <dimen name="chartViewDefaultLineStrokeWidth">2dp</dimen>
+
+    <dimen name="chartNavigationViewHeight">48dp</dimen>
+</resources>

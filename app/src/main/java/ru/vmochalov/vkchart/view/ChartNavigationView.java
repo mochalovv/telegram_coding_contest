@@ -16,7 +16,6 @@ import java.util.Collections;
 import java.util.List;
 
 import ru.vmochalov.vkchart.dto.Chart;
-import timber.log.Timber;
 
 class ChartNavigationView extends View {
 
@@ -40,6 +39,9 @@ class ChartNavigationView extends View {
     private float frameVerticalBorderWidth = 4;
 
     private int linesCount;
+
+    //todo: obtain from resources
+    private int prefferedHeight = 75;
 
     private PeriodChangedListener periodChangedListener;
 
@@ -222,10 +224,13 @@ class ChartNavigationView extends View {
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : prefferedHeight;
+        int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
 
-        Timber.d("onMeasure; widthMeasureSpec: " + MeasureSpec.toString(widthMeasureSpec) + ", heightMeasureSpec: " + MeasureSpec.toString(heightMeasureSpec));
-        //todo: send prefered size as in arrival
+        measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
+        measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
+
+        setMeasuredDimension(measuredWidth, measuredHeight);
     }
 
     public void onDraw(Canvas canvas) {

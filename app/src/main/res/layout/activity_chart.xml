@@ -2,6 +2,6 @@
 <ru.vmochalov.vkchart.view.ChartView xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/chartView"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content">
 
 </ru.vmochalov.vkchart.view.ChartView>
