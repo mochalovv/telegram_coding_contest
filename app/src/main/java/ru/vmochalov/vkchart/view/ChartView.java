@@ -61,9 +61,6 @@ public class ChartView extends LinearLayout {
         layoutInflater.inflate(R.layout.layout_chart_view, this, true);
     }
 
-    private int backgroundColorNightMode = Color.rgb(29, 39, 51);
-    private int backgroundColor = Color.WHITE; //TRANSPARENT;
-
     private void initInnerViews() {
         detailedChartView = findViewById(R.id.chart);
         chartNavigationView = findViewById(R.id.chartNavigation);
@@ -128,7 +125,7 @@ public class ChartView extends LinearLayout {
         detailedChartView.setNightMode(nightModeOn);
         chartNavigationView.setNightMode(nightModeOn);
 
-        setBackgroundColor(nightModeOn ? backgroundColorNightMode : backgroundColor);
+        setBackgroundColor(getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground));
 
         for (int i = 0; i < chartContainer.getChildCount(); i++) {
             View view = chartContainer.getChildAt(i);

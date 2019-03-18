@@ -1,28 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:fillViewport="true">
 
-    <Toolbar
-        android:id="@+id/toolbar"
+    <ru.vmochalov.vkchart.view.ChartView
+        android:id="@+id/chartView"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:title="Statistics"
-        android:titleTextColor="@android:color/white" />
+        android:layout_height="wrap_content">
 
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="true">
+    </ru.vmochalov.vkchart.view.ChartView>
 
-        <ru.vmochalov.vkchart.view.ChartView
-            android:id="@+id/chartView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-        </ru.vmochalov.vkchart.view.ChartView>
-    </ScrollView>
-
-</LinearLayout>
+</ScrollView>
