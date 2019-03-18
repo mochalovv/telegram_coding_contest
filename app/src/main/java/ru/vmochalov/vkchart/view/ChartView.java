@@ -2,8 +2,10 @@ package ru.vmochalov.vkchart.view;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
@@ -59,6 +61,9 @@ public class ChartView extends LinearLayout {
         layoutInflater.inflate(R.layout.layout_chart_view, this, true);
     }
 
+    private int backgroundColorNightMode = Color.rgb(29, 39, 51);
+    private int backgroundColor = Color.WHITE; //TRANSPARENT;
+
     private void initInnerViews() {
         detailedChartView = findViewById(R.id.chart);
         chartNavigationView = findViewById(R.id.chartNavigation);
@@ -83,6 +88,7 @@ public class ChartView extends LinearLayout {
                 }
         );
     }
+
 
     public void setChartData(String jsonSource) {
         Chart chart = parseChartFromJson(jsonSource);
@@ -114,6 +120,20 @@ public class ChartView extends LinearLayout {
                 });
 
                 chartContainer.addView(checkBox);
+            }
+        }
+    }
+
+    public void setNightMode(boolean nightModeOn) {
+        detailedChartView.setNightMode(nightModeOn);
+        chartNavigationView.setNightMode(nightModeOn);
+
+        setBackgroundColor(nightModeOn ? backgroundColorNightMode : backgroundColor);
+
+        for (int i = 0; i < chartContainer.getChildCount(); i++) {
+            View view = chartContainer.getChildAt(i);
+            if (view instanceof CheckBox) {
+                ((CheckBox) view).setTextColor(nightModeOn ? Color.WHITE : Color.BLACK);
             }
         }
     }

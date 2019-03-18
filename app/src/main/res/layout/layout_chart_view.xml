@@ -3,7 +3,6 @@
     android:id="@+id/chartContainer"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:background="@android:color/holo_blue_light"
     android:orientation="vertical"
     android:padding="16dp">
 

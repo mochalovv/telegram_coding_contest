@@ -94,6 +94,7 @@ class DetailedChartView extends View {
     private Paint debugPaint = new Paint();
     private Paint labelPaint = new Paint();
     private Paint verticalAxisPaint = new Paint();
+    private Paint verticalLabelsPaint = new Paint();
 
     private int absLevelsCount;
 
@@ -170,11 +171,14 @@ class DetailedChartView extends View {
         debugPaint.setColor(Color.LTGRAY);
 
         verticalAxisPaint.setColor(axesColor);
-        verticalAxisPaint.setTextSize(axisTextSize);
         verticalAxisPaint.setStrokeWidth(axisStrokeWidth);
-        verticalAxisPaint.setTextAlign(Paint.Align.LEFT);
         verticalAxisPaint.setAntiAlias(true);
         verticalAxisPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        verticalLabelsPaint.setColor(axesColor);
+        verticalLabelsPaint.setTextSize(axisTextSize);
+        verticalLabelsPaint.setTextAlign(Paint.Align.LEFT);
+        verticalLabelsPaint.setStyle(Paint.Style.FILL_AND_STROKE);
     }
 
     private void initVariablesForChartDrawing() {
@@ -285,7 +289,7 @@ class DetailedChartView extends View {
             verticalAxesLinesCoords[4 * i + 2] = width;
             verticalAxesLinesCoords[4 * i + 3] = verticalYAxisCoord;
 
-            canvas.drawText(verticalLevelValuesAsStrings[i], axesTextMargin, verticalYAxisCoord - axesTextMargin, verticalAxisPaint);
+            canvas.drawText(verticalLevelValuesAsStrings[i], axesTextMargin, verticalYAxisCoord - axesTextMargin, verticalLabelsPaint);
         }
 
         canvas.drawLines(verticalAxesLinesCoords, verticalAxisPaint);
@@ -599,6 +603,19 @@ class DetailedChartView extends View {
         }
 
         return max;
+    }
+
+    private boolean nightModeOn;
+
+    public void setNightMode(boolean nightModeOn) {
+        this.nightModeOn = nightModeOn;
+
+        int backgroundColor = nightModeOn ? Color.rgb(29, 39, 51) : this.backgroundColor;
+        int verticalAxisColor = nightModeOn ? Color.BLACK : axesColor;
+        backgroundPaint.setColor(backgroundColor);
+        verticalAxisPaint.setColor(verticalAxisColor);
+
+        invalidate();
     }
 
 }

@@ -249,8 +249,12 @@ class ChartNavigationView extends View {
     float frameStart = 200;
     float frameWidth = 300;
 
+    private int activeBackgroundColor = Color.WHITE;
+    private int activeBackgroundColorNightMode = Color.rgb(29, 39, 51);
     private int frameColor = Color.rgb(219, 231, 240);
+    private int frameColorNightMode = Color.rgb(43, 66, 86);
     private int passiveBackgroundColor = Color.argb(0xa0, 245, 248, 249);
+    private int passiveBackgroundColorNightMode = Color.argb(0xa0, 25, 33, 46);
 
     private float xStep;
     private float yStep;
@@ -258,7 +262,7 @@ class ChartNavigationView extends View {
     private float[] chartPoints;
 
     private void initVariableForDrawing() {
-        activeBackgroundPaint.setColor(Color.WHITE); //todo: not only white, but also gray
+        activeBackgroundPaint.setColor(activeBackgroundColor); //todo: not only white, but also gray
         activeBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         framePaint.setColor(frameColor);
@@ -409,6 +413,18 @@ class ChartNavigationView extends View {
         }
 
         return max;
+    }
+
+    private boolean nightModeOn;
+
+    public void setNightMode(boolean nightModeOn) {
+        this.nightModeOn = nightModeOn;
+
+        activeBackgroundPaint.setColor(nightModeOn ? activeBackgroundColorNightMode : activeBackgroundColor);
+        duff.setColor(nightModeOn ? passiveBackgroundColorNightMode : passiveBackgroundColor);
+        framePaint.setColor(nightModeOn ? frameColorNightMode : frameColor);
+
+        invalidate();
     }
 
 }
