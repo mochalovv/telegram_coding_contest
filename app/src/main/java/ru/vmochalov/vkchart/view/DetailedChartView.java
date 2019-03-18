@@ -243,7 +243,7 @@ class DetailedChartView extends View {
         int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
         measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
 
-        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : measuredWidth;
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int)(measuredWidth * 0.85);
         measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
 
         setMeasuredDimension(measuredWidth, measuredHeight);
