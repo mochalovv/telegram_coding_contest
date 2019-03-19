@@ -1,5 +1,7 @@
 package ru.vmochalov.vkchart.view;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
@@ -32,7 +34,7 @@ class DetailedChartView extends View {
     private boolean[] linesVisibility;
     private int[] linesAlphas; // 0 - 255
 
-    private int ANIMATION_DURATION = 300; //ms
+    private int ANIMATION_DURATION = 500; //ms
     private int ALPHA_ANIMATION_DURATION = 300;
 
     // styleable attributes
@@ -96,6 +98,7 @@ class DetailedChartView extends View {
     private Paint verticalAxisPaint = new Paint();
     private Paint verticalAxisPaintAnimation = new Paint();
     private Paint verticalLabelsPaint = new Paint();
+    private Paint verticalLabelsPaintAnimation = new Paint();
 
     private int absLevelsCount;
 
@@ -123,6 +126,7 @@ class DetailedChartView extends View {
     private List<Date> abscissa;
 
     private String[] verticalLevelValuesAsStrings = new String[levelsCount];
+    private String[] oldVerticalLevelValuesAsStrings = new String[levelsCount];
 
     private float[] verticalAxesLinesCoords = new float[levelsCount * 4];
 
@@ -178,6 +182,12 @@ class DetailedChartView extends View {
         verticalLabelsPaint.setTextAlign(Paint.Align.LEFT);
         verticalLabelsPaint.setAntiAlias(true);
         verticalLabelsPaint.setStyle(Paint.Style.FILL);
+
+        verticalLabelsPaintAnimation.setTextSize(axisTextSize);
+        verticalLabelsPaintAnimation.setStrokeWidth(axisStrokeWidth);
+        verticalLabelsPaintAnimation.setTextAlign(Paint.Align.LEFT);
+        verticalLabelsPaintAnimation.setAntiAlias(true);
+        verticalLabelsPaintAnimation.setStyle(Paint.Style.FILL);
     }
 
     private void initVariablesForChartDrawing() {
@@ -214,20 +224,21 @@ class DetailedChartView extends View {
         chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
     }
 
-
-    private void updateVerticalLabelsDrawingParams(int newMaxVisibleValue, int oldMaxVisibleValue) {
-
+    private void updateVerticalLabelsDrawingParams(int newMaxVisibleValue) {
         int verticalLevelDelta = (newMaxVisibleValue / levelsCount);
 
         if (!areLinesVisible() || verticalLevelDelta == 0)
             verticalLevelDelta = 1; // in case user is confused
 
+        if (oldVerticalLevelValuesAsStrings[0] == null) {
+            for (int i = 0; i < levelsCount; i++) {
+                oldVerticalLevelValuesAsStrings[i] = Integer.toString(verticalLevelDelta * i);
+            }
+        }
         //calculationg background levels
         for (int i = 0; i < levelsCount; i++) {
             verticalLevelValuesAsStrings[i] = Integer.toString(verticalLevelDelta * i);
         }
-
-        // все, что надо пересчитать - verticalLevelValuesAsStrings
     }
 
     private float axisAnimationFraction;
@@ -244,7 +255,7 @@ class DetailedChartView extends View {
 
         verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
 
-        verticalAxisValueAnimator.setDuration(300);
+        verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
         verticalAxisValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
@@ -259,28 +270,35 @@ class DetailedChartView extends View {
 
     private void updateVerticalLinesDrawingParams(int maxVisibleValue) {
         yStep = (height - bottomAxisMargin - topAxisMargin) / maxVisibleValue;
-
-        oldMaxVisibleValue = maxVisibleValue;
     }
 
-    private int oldMaxVisibleValue;
     private boolean maxVisibleValueChangedOnStart;
 
     private ValueAnimator maxVisibleValueAnimator;
 
+    private int oldFixedMaxVisibleValue;
+
     private void initVariablesForVerticalChartDrawing() {
         int newMaxVisibleValue = getMaxVisibleValue();
 
+        if (newMaxVisibleValue == oldFixedMaxVisibleValue) {
+            return;
+        }
+
         if (!maxVisibleValueChangedOnStart) {
             maxVisibleValueChangedOnStart = true;
+
+            updateVerticalLabelsDrawingParams(newMaxVisibleValue);
             updateVerticalLinesDrawingParams(newMaxVisibleValue);
         } else {
+
+            updateVerticalLabelsDrawingParams(newMaxVisibleValue);
 
             if (maxVisibleValueAnimator != null) {
                 maxVisibleValueAnimator.pause();
             }
 
-            maxVisibleValueAnimator = ValueAnimator.ofInt(oldMaxVisibleValue, newMaxVisibleValue);
+            maxVisibleValueAnimator = ValueAnimator.ofInt(oldFixedMaxVisibleValue, newMaxVisibleValue);
             maxVisibleValueAnimator.setDuration(ANIMATION_DURATION);
             maxVisibleValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
@@ -292,15 +310,20 @@ class DetailedChartView extends View {
                     DetailedChartView.this.invalidate();
                 }
             });
+            maxVisibleValueAnimator.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    super.onAnimationEnd(animation);
+                    oldVerticalLevelValuesAsStrings = verticalLevelValuesAsStrings.clone();
+                }
+            });
 
             maxVisibleValueAnimator.start();
+
+            animateVerticalAxis(newMaxVisibleValue < oldFixedMaxVisibleValue);
         }
 
-        updateVerticalLabelsDrawingParams(newMaxVisibleValue, oldMaxVisibleValue);
-
-        if (newMaxVisibleValue != oldMaxVisibleValue) {
-            animateVerticalAxis(newMaxVisibleValue < oldMaxVisibleValue);
-        }
+        oldFixedMaxVisibleValue = newMaxVisibleValue;
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -369,7 +392,7 @@ class DetailedChartView extends View {
 
     private float[] firstVerticalLIneAnimationCoords = new float[4];
 
-    private void drawVerticalAxis(Canvas canvas, float fraction, boolean appearFromButton, boolean appearing) {
+    private void drawVerticalAxis(Canvas canvas, float fraction, boolean appearFromBottom, boolean appearing) {
 
         int alpha = appearing ? Math.min((int) (0xff * ((1 - fraction) * (1 - fraction))), 0xff) : Math.min((int) (0xff * (fraction * fraction)), 0xff);
 
@@ -392,7 +415,7 @@ class DetailedChartView extends View {
         firstVerticalLIneAnimationCoords[3] = verticalYAxisCoord;
 
         for (int i = 1; i < levelsCount; i++) {
-            if (appearFromButton) {
+            if (appearFromBottom) {
                 verticalYAxisCoord = height - bottomAxisMargin - i * yDelta * animationFraction;
             } else {
                 verticalYAxisCoord = height - bottomAxisMargin - (levelsCount) * yDelta + i * yDelta * animationFraction;
@@ -409,10 +432,49 @@ class DetailedChartView extends View {
 
 
     private void drawVerticalLabels(Canvas canvas) {
-        for (int i = 0; i < levelsCount; i++) {
-            verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;
-            canvas.drawText(verticalLevelValuesAsStrings[i], 0, verticalYAxisCoord - axesTextMargin, verticalLabelsPaint);
+        boolean animationIsHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
+
+        if (animationIsHappening) {
+            drawVerticalLabels(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom, true);
+            drawVerticalLabels(canvas, axisAnimationFraction, !axisAnimationDirectionAppearFromBottom, false);
+
+        } else {
+            for (int i = 0; i < levelsCount; i++) {
+                verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;
+                canvas.drawText(oldVerticalLevelValuesAsStrings[i], 0, verticalYAxisCoord - axesTextMargin, verticalLabelsPaint);
+            }
         }
+    }
+
+    private float verticalYAxisCoordAnimation;
+
+    private void drawVerticalLabels(Canvas canvas, float fraction, boolean appearFromBottom, boolean appearing) {
+        int alpha = appearing ? Math.min((int) (0xff * ((1 - fraction) * (1 - fraction))), 0xff) : Math.min((int) (0xff * (fraction * fraction)), 0xff);
+
+        int color = Color.argb(alpha,
+                Color.red(verticalLabelsPaint.getColor()),
+                Color.green(verticalLabelsPaint.getColor()),
+                Color.blue(verticalLabelsPaint.getColor())
+        );
+
+        verticalLabelsPaintAnimation.setColor(color);
+
+        float animationFraction = appearing ? (1 - fraction) : fraction;
+
+        String[] labelsToUse = appearing ? verticalLevelValuesAsStrings : oldVerticalLevelValuesAsStrings;
+
+        for (int i = 1; i < levelsCount; i++) {
+            if (appearFromBottom) {
+                verticalYAxisCoordAnimation = height - bottomAxisMargin - (i * yDelta) * animationFraction;
+                canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
+            } else {
+                verticalYAxisCoordAnimation = height - bottomAxisMargin - (levelsCount) * yDelta + ((levelsCount - i) * yDelta) * animationFraction;
+                canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
+            }
+        }
+
+        verticalYAxisCoordAnimation = height - bottomAxisMargin;
+        canvas.drawText(labelsToUse[0], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaint);
     }
 
     private boolean areLinesVisible() {
@@ -690,6 +752,8 @@ class DetailedChartView extends View {
         initVariablesForChartDrawing();
 
         initHorizontalLabelsToDraw();
+
+        initVariablesForVerticalChartDrawing();
 
         invalidate();
     }
