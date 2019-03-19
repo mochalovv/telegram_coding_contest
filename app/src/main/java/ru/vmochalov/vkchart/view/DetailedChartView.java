@@ -1,5 +1,6 @@
 package ru.vmochalov.vkchart.view;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -28,7 +29,11 @@ class DetailedChartView extends View {
 
     private Chart chart;
 
-    private boolean[] chartsVisibility;
+    private boolean[] linesVisibility;
+    private int[] linesAlphas; // 0 - 255
+
+    private int ANIMATION_DURATION = 300; //ms
+    private int ALPHA_ANIMATION_DURATION = 300;
 
     // styleable attributes
     private int axisTextSize;
@@ -212,14 +217,14 @@ class DetailedChartView extends View {
         chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
     }
 
-    private void initVariablesForVerticalChartDrawing() {
-        yStep = (height - bottomAxisMargin - topAxisMargin) / getMaxVisibleValue();
+    private void updateVerticalDrawingParams(float maxVisibleValue) {
+        yStep = (height - bottomAxisMargin - topAxisMargin) / maxVisibleValue;
 
         verticalLevelValues = new int[levelsCount]; // from bottom to top
 
         verticalLevelValuesAsStrings = new String[levelsCount];
 
-        verticalLevelDelta = getMaxVisibleValue() / levelsCount;
+        verticalLevelDelta = (int) (maxVisibleValue / levelsCount);
 
         if (!areLinesVisible() || verticalLevelDelta == 0)
             verticalLevelDelta = 1; // in case user is confused
@@ -237,13 +242,52 @@ class DetailedChartView extends View {
         yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
 
         horizontalLabelY = height - axesTextSize / 2;
+
+        oldMaxVisibleValue = maxVisibleValue;
+    }
+
+    //todo: read notes in notepad, anmate vertical labels and axis. then animate horizontal labels
+
+    private float oldMaxVisibleValue;
+    private boolean maxVisibleValueChangedOnStart;
+
+    private ValueAnimator maxVisibleValueAnimator;// = new ValueAnimator();
+
+    private void initVariablesForVerticalChartDrawing() {
+        int newMaxVisibleValue = getMaxVisibleValue();
+
+        if (!maxVisibleValueChangedOnStart) {
+            maxVisibleValueChangedOnStart = true;
+            updateVerticalDrawingParams(newMaxVisibleValue);
+        } else {
+
+            if (maxVisibleValueAnimator != null) {
+                maxVisibleValueAnimator.pause();
+            }
+
+            maxVisibleValueAnimator = ValueAnimator.ofFloat(oldMaxVisibleValue, newMaxVisibleValue);
+            maxVisibleValueAnimator.setDuration(ANIMATION_DURATION);
+            maxVisibleValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    float value = (float) animation.getAnimatedValue();
+
+                    updateVerticalDrawingParams(value);
+
+                    DetailedChartView.this.invalidate();
+                }
+            });
+
+            maxVisibleValueAnimator.start();
+        }
+
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
         measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
 
-        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int)(measuredWidth * 0.85);
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int) (measuredWidth * 0.85);
         measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
 
         setMeasuredDimension(measuredWidth, measuredHeight);
@@ -296,7 +340,7 @@ class DetailedChartView extends View {
     }
 
     private boolean areLinesVisible() {
-        for (boolean visibility : chartsVisibility) {
+        for (boolean visibility : linesVisibility) {
             if (visibility) {
                 return true;
             }
@@ -503,14 +547,30 @@ class DetailedChartView extends View {
     private int chartPointsIndex;
     private List<Integer> chartOrdinate;
 
+    private int tempColor;
+
     private void drawChart(Canvas canvas) {
         for (int i = 0; i < linesCount; i++) {
-            if (!chartsVisibility[i]) {
+//            if (!linesVisibility[i]) {
+//                continue; // skip muted charts
+//            }
+
+            if (linesAlphas[i] == 0) {
                 continue; // skip muted charts
             }
 
             chartPointsIndex = 0;
-            chartPaint.setColor(chart.getColors().get(i));
+
+            tempColor = chart.getColors().get(i);
+
+            int color = Color.argb(
+                    linesAlphas[i],
+                    Color.red(tempColor),
+                    Color.green(tempColor),
+                    Color.blue(tempColor)
+            );
+
+            chartPaint.setColor(color);
             chartOrdinate = chart.getOrdinates().get(i);
 
             previousX = x0 + firstVisiblePointIndex * xStep;
@@ -547,9 +607,11 @@ class DetailedChartView extends View {
     public void setChart(Chart chart) {
         this.chart = chart;
 
-        this.chartsVisibility = new boolean[chart.getLabels().size()];
+        this.linesVisibility = new boolean[chart.getLabels().size()];
+        Arrays.fill(linesVisibility, true);
 
-        Arrays.fill(chartsVisibility, true);
+        linesAlphas = new int[chart.getLabels().size()];
+        Arrays.fill(linesAlphas, 0xff);
 
         linesCount = chart.getLineIds().size();
 
@@ -560,11 +622,36 @@ class DetailedChartView extends View {
         invalidate();
     }
 
+    private ValueAnimator linesAlphaAnimator;
+
     public void setLineVisibility(String lineId, boolean visible) {
-        int lineIndex = chart.getLineIds().indexOf(lineId);
+        final int lineIndex = chart.getLineIds().indexOf(lineId);
 
         if (lineIndex != -1) {
-            chartsVisibility[lineIndex] = visible;
+
+            if (linesVisibility[lineIndex] != visible) {
+
+                if (linesAlphaAnimator != null) {
+                    linesAlphaAnimator.end();
+                }
+                linesAlphaAnimator = ValueAnimator.ofInt(visible ? 0 : 0xff, visible ? 0xff : 0);
+                linesAlphaAnimator.setDuration(ALPHA_ANIMATION_DURATION);
+
+                linesAlphaAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        int value = (int) animation.getAnimatedValue();
+
+                        linesAlphas[lineIndex] = value;
+                        DetailedChartView.this.invalidate();
+
+                    }
+                });
+                linesAlphaAnimator.start();
+            }
+            linesVisibility[lineIndex] = visible;
+
+
             initVariablesForVerticalChartDrawing();
             invalidate();
         }
@@ -586,7 +673,7 @@ class DetailedChartView extends View {
         visiblePointValues.clear();
 
         for (int i = 0; i < chart.getLineIds().size(); i++) {
-            if (chartsVisibility[i]) {
+            if (linesVisibility[i]) {
                 visiblePointValues.add(chart.getOrdinates().get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
             }
         }
@@ -604,11 +691,7 @@ class DetailedChartView extends View {
         return max;
     }
 
-    private boolean nightModeOn;
-
     public void setNightMode(boolean nightModeOn) {
-        this.nightModeOn = nightModeOn;
-
         int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
         int verticalAxisColor = getResources().getColor(nightModeOn ? R.color.darkThemeAxis : R.color.lightThemeAxis);
         int labelsColor = getResources().getColor(nightModeOn ? R.color.darkThemeLabelText : R.color.lightThemeLabelText);
