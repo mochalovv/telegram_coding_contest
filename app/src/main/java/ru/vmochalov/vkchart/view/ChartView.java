@@ -20,7 +20,6 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.Chart;
-import timber.log.Timber;
 
 import static android.util.TypedValue.COMPLEX_UNIT_SP;
 
@@ -210,9 +209,12 @@ public class ChartView extends LinearLayout {
                     }
                 }
 
+                float newX;
+                int infoWidthGap = infoView.getWidth() / 2 + 30;
+
                 private void updateInfoViewX(float x) {
 
-                    float newX = x + infoView.getWidth() / 2 + 30;
+                    newX = x + infoWidthGap;
 
                     if ((newX + infoView.getWidth()) > detailedChartView.getWidth()) {
                         newX = detailedChartView.getWidth() - infoView.getWidth();
@@ -246,9 +248,8 @@ public class ChartView extends LinearLayout {
     private Chart parseChartFromJson(String jsonSource) {
         try {
             return Chart.parse(jsonSource);
-        } catch (
-                JSONException ex) {
-            Timber.e("Can not parse json: " + ex.getMessage());
+        } catch (JSONException ex) {
+            //do nothing
         }
 
         return null;

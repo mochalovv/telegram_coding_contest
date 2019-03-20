@@ -203,6 +203,17 @@ class DetailedChartView extends View {
         verticalLabelsPaintAnimation.setTextAlign(Paint.Align.LEFT);
         verticalLabelsPaintAnimation.setAntiAlias(true);
         verticalLabelsPaintAnimation.setStyle(Paint.Style.FILL);
+
+        verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
+        verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
+        verticalAxisValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                axisAnimationFraction = (float) animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+
     }
 
     private void initVariablesForChartDrawing() {
@@ -329,21 +340,8 @@ class DetailedChartView extends View {
         }
 
         axisAnimationDirectionAppearFromBottom = maxVisibleValueDecreased;
-
-        verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
-
-        verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
-        verticalAxisValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                axisAnimationFraction = (float) animation.getAnimatedValue();
-                invalidate();
-            }
-        });
-
         verticalAxisValueAnimator.start();
     }
-
 
     private void updateVerticalLinesDrawingParams(int maxVisibleValue) {
         yStep = (height - bottomAxisMargin - topAxisMargin) / maxVisibleValue;
@@ -610,8 +608,6 @@ class DetailedChartView extends View {
         return false;
     }
 
-    //todo: handle chartview touches and show points info
-
     public void onVisibleRangeMoved(double startVisiblePercent, double endVisiblePercent) {
         startPercent = startVisiblePercent;
         endPercent = endVisiblePercent;
@@ -774,7 +770,6 @@ class DetailedChartView extends View {
             }
         });
         horizontalLabelsAnimator.start();
-
     }
 
     private void drawHorizontalLabels(Canvas canvas) {
