@@ -540,9 +540,9 @@ class DetailedChartView extends View {
 
         for (int i = 1; i < levelsCount; i++) {
             if (appearFromBottom) {
-                verticalYAxisCoord = height - bottomAxisMargin - i * yDelta * animationFraction;
+                verticalYAxisCoord = height - bottomAxisMargin - (i - 1) * yDelta - yDelta * animationFraction;
             } else {
-                verticalYAxisCoord = height - bottomAxisMargin - (levelsCount) * yDelta + i * yDelta * animationFraction;
+                verticalYAxisCoord = height - bottomAxisMargin - (levelsCount) * yDelta + (i - 1) * yDelta + yDelta * animationFraction;
             }
             verticalAxesLinesCoords[4 * i] = 0;
             verticalAxesLinesCoords[4 * i + 1] = verticalYAxisCoord;
@@ -589,10 +589,10 @@ class DetailedChartView extends View {
 
         for (int i = 1; i < levelsCount; i++) {
             if (appearFromBottom) {
-                verticalYAxisCoordAnimation = height - bottomAxisMargin - (i * yDelta) * animationFraction;
+                verticalYAxisCoordAnimation = height - bottomAxisMargin - (i - 1) * yDelta - yDelta * animationFraction;
                 canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
             } else {
-                verticalYAxisCoordAnimation = height - bottomAxisMargin - (levelsCount) * yDelta + ((levelsCount - i) * yDelta) * animationFraction;
+                verticalYAxisCoordAnimation = height - bottomAxisMargin - (levelsCount) * yDelta + (levelsCount - i - 1) * yDelta + yDelta * animationFraction;
                 canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
             }
         }

@@ -89,7 +89,7 @@ class ChartNavigationView extends View {
         LEFT_BORDER_TOUCH, FRAME_TOUCH, RIGHT_BORDER_TOUCH, UNHANDLED_TOUCH
     }
 
-    private float borderTouchArea = 20; //px
+    private float borderTouchArea = 30; //px
     private float minimumFrameWidth = 40; // px
 
     private void initTouchListener() {
