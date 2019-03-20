@@ -20,6 +20,7 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.Chart;
+import timber.log.Timber;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
@@ -105,10 +106,6 @@ class DetailedChartView extends View {
     private Paint verticalLabelsPaint = new Paint();
     private Paint verticalLabelsPaintAnimation = new Paint();
 
-//    private int absLevelsCount;
-
-//    private float[] labelXCoords;
-
     private int bottomAxisMargin = 40 + 20;
     private int topAxisMargin = 40;
     private int levelsCount = 6;
@@ -117,9 +114,6 @@ class DetailedChartView extends View {
 
     private double startPercent;
     private double endPercent;
-
-//    private int[] pointIndexesToDrawLabel;
-//    private float pointsInOnePartition;
 
     private double visibleWidth;
     private int firstDateIndex;
@@ -149,10 +143,6 @@ class DetailedChartView extends View {
         backgroundPaint.setColor(getResources().getColor(R.color.lightThemeChartBackground));
         backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
-//        absLevelsCount = 6;
-
-//        labelXCoords = new float[absLevelsCount + 2];
-
         labelPaint.setTextAlign(Paint.Align.CENTER);
         labelPaint.setColor(getResources().getColor(R.color.lightThemeLabelText));
         labelPaint.setTextSize(axisTextSize);
@@ -169,8 +159,6 @@ class DetailedChartView extends View {
 
         startPercent = 0;
         endPercent = 1;
-
-//        pointIndexesToDrawLabel = new int[absLevelsCount + 2]; // one extra point from every side; required for scrolling
 
         chartPaint.setStrokeWidth(lineStrokeWidth);
         chartPaint.setStyle(Paint.Style.STROKE);
@@ -367,8 +355,8 @@ class DetailedChartView extends View {
     private void onChartAndWidthReady() {
         if (width > 0 && chart != null) {
             initVariablesForChartDrawing();
-
-            initHorizontalLabelsToDraw();
+            initVariablesForHorizontalChartDrawing();
+            updatedHorizontalLabelsScale();
         }
     }
 
@@ -515,7 +503,6 @@ class DetailedChartView extends View {
         endPercent = endVisiblePercent;
 
         initVariablesForChartDrawing();
-//        reorganizeHorizontalLabelsForDrawing();
 
         invalidate();
     }
@@ -526,58 +513,10 @@ class DetailedChartView extends View {
 
         initVariablesForChartDrawing();
 
-        this.startIsStable = startIsStable;
-//        initHorizontalLabelsToDraw();
+        updatedHorizontalLabelsScale();
 
         invalidate();
     }
-
-    private boolean startIsStable = true;
-
-    private int getFirstFullyVisiblePoint() {
-        int indexOfFirstVisiblePoint = (int) (abscissa.size() * startPercent);
-
-        while (!isPointLabelFullyVisible(indexOfFirstVisiblePoint)) {
-            indexOfFirstVisiblePoint++;
-        }
-
-        return indexOfFirstVisiblePoint;
-    }
-
-    private int getLastFullyVisiblePoint() {
-        int indexOfLastVisiblePoint = (int) ((abscissa.size() - 1) * endPercent);
-
-        while (!isPointLabelFullyVisible(indexOfLastVisiblePoint)) {
-            indexOfLastVisiblePoint--;
-        }
-
-        return indexOfLastVisiblePoint;
-    }
-
-//    private int getFirstVisibleNamedPoint() {
-//        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-//            if (isPointLabelFullyVisible(pointIndexesToDrawLabel[i])) {
-//                return pointIndexesToDrawLabel[i];
-//            }
-//        }
-//        Timber.d("!!!=== return 0 from getFirstVisibleNamedPoint(); ");
-//        return 0;
-//    }
-//
-//    private int getLastVisibleNamedPoint() {
-//        for (int i = pointIndexesToDrawLabel.length - 1; i >= 0; i--) {
-//            if (isPointLabelFullyVisible(pointIndexesToDrawLabel[i])) {
-//                return pointIndexesToDrawLabel[i];
-//            }
-//        }
-//
-//        Timber.d("!!!=== return 0 from getLastVisibleNamedPoint(); ");
-//
-//        return 0;
-//    }
-
-//    private int currentGapBetweenPoints;
-    // пусть на экране со старта - 5 точек. надо подобрать масштаб, чтоб было видно пять точек
 
     private int getPowOfTwo(int pow) {
         int result = 1;
@@ -592,11 +531,17 @@ class DetailedChartView extends View {
     private int currentLabelsScale;
 
     private void setScaleForHorizontalLabels(int scale) { // 0 - all are visible, 1 - every second, 3 - every 4th, 4 - every 8th and so on
+        fadePointIndexes.clear();
 
         int indexToMakeVisible = getPowOfTwo(scale);
+        boolean newVisibility;
 
         for (int i = 0; i < labelsVisibility.length; i++) {
-            labelsVisibility[i] = (i % indexToMakeVisible == 0);
+            newVisibility = (i % indexToMakeVisible == 0);
+            if (labelsVisibility[i] != newVisibility) {
+                labelsVisibility[i] = newVisibility;
+                fadePointIndexes.add(i);
+            }
         }
     }
 
@@ -607,51 +552,33 @@ class DetailedChartView extends View {
         int firstPointIndex = 0;
         int lastPointIndex = 0;
 
-
         while (lastPointIndex < labelsVisibility.length && areNeightborPointsTooClose(firstPointIndex, lastPointIndex)) {
             scale++;
             lastPointIndex = getPowOfTwo(scale);
         }
 
-        return scale;
+        while (lastPointIndex < labelsVisibility.length && areNeighbourPointsTooFar(firstPointIndex, lastPointIndex)) {
+            scale--;
+            lastPointIndex = getPowOfTwo(scale);
+        }
 
-//        int indexOfFirstVisiblePoint = getFirstFullyVisiblePoint();
-//        int indexOfLastVisiblePoint = getLastFullyVisiblePoint();
-//
-//        int totalVisiblePoints = indexOfLastVisiblePoint - indexOfFirstVisiblePoint;
-//        // какой дол
-//        while
+        return scale;
     }
 
-    private void initHorizontalLabelsToDraw() {
-        currentLabelsScale = getInitialScale();
-        setScaleForHorizontalLabels(currentLabelsScale);
+    private void updatedHorizontalLabelsScale() {
+        int newScale = getInitialScale();
 
-//        int indexOfFirstVisiblePoint = getFirstFullyVisiblePoint();
-//        int indexOfLastVisiblePoint = getLastFullyVisiblePoint();
-//
-//        int firstVisibleLabelIndex = 1;
-//        int lastVisibleLabelIndex = pointIndexesToDrawLabel.length - 2;
-//
-//        pointIndexesToDrawLabel[firstVisibleLabelIndex] = indexOfFirstVisiblePoint;
-//        pointIndexesToDrawLabel[lastVisibleLabelIndex] = indexOfLastVisiblePoint;
-//
-//        float totalPointsVisible = indexOfLastVisiblePoint - indexOfFirstVisiblePoint + 1;
-//
-//
-//        pointsInOnePartition = totalPointsVisible / (lastVisibleLabelIndex - firstVisibleLabelIndex);
-//
-//        int pointIndexToDraw;
-//
-//        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-//            if (i == 0) {
-//                pointIndexToDraw = indexOfFirstVisiblePoint - Math.round(pointsInOnePartition);
-//                pointIndexesToDrawLabel[i] = pointIndexToDraw;
-//            } else {
-//                pointIndexToDraw = indexOfFirstVisiblePoint + Math.round(pointsInOnePartition * (i - 1));
-//                pointIndexesToDrawLabel[i] = pointIndexToDraw;
-//            }
-//        }
+        if (newScale != currentLabelsScale) {
+            if (newScale < currentLabelsScale) {
+                animateHorizontalLabels(true);
+            } else {
+                animateHorizontalLabels(false);
+            }
+
+            currentLabelsScale = newScale;
+
+            setScaleForHorizontalLabels(newScale);
+        }
     }
 
     private void increaseScale() {
@@ -663,234 +590,6 @@ class DetailedChartView extends View {
             currentLabelsScale--;
         }
     }
-//    // убрать средние точки
-//    private void makePointsRare(int pointIndexInLabelArray) {
-//
-//        int indexInArrayForDrawing = 0;
-//
-//        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-//            if (pointIndexesToDrawLabel[i] == pointIndexInLabelArray) {
-//                indexInArrayForDrawing = i;
-//                break;
-//            }
-//        }
-//
-//        int existingPointsGap = pointIndexesToDrawLabel[4] - pointIndexesToDrawLabel[3];
-//
-//        pointsInOnePartition = existingPointsGap * 2;
-//
-//        int newPointsToDraw[] = new int[pointIndexesToDrawLabel.length];
-//        List<Integer> pointsToFade = new ArrayList<>();
-//
-//        newPointsToDraw[indexInArrayForDrawing] = pointIndexInLabelArray;
-//        Timber.d("!!!=== pointIndexInLabelArray: " + pointIndexInLabelArray + ", indexInArrayForDrawing: " + indexInArrayForDrawing);
-//
-//        // убрать каждую вторую точку, при этом оставить точку на indexArrayForDrawing на месте
-//
-//        // make previous points rare
-//        int nextIndexToInsertTo = indexInArrayForDrawing - 1; // nextIndexToInsertTo
-////        for (int i = indexInArrayForDrawing - 1; i >= indexInArrayForDrawing && nextIndexToInsertTo >= 0; i--) {
-//        for (int i = indexInArrayForDrawing - 1; i >= 0 && nextIndexToInsertTo >= 0; i--) {
-//
-//            if ((indexInArrayForDrawing - i) % 2 == 0) {
-//                newPointsToDraw[nextIndexToInsertTo--] = pointIndexesToDrawLabel[i];
-//            } else {
-//                pointsToFade.add(pointIndexesToDrawLabel[i]);
-//            }
-//        }
-//
-////            if (nextIndexToInsertTo > 0) {
-//        while (nextIndexToInsertTo >= 0) {
-//            newPointsToDraw[nextIndexToInsertTo] = newPointsToDraw[nextIndexToInsertTo + 1] - existingPointsGap * 2;
-//            nextIndexToInsertTo--;
-//        }
-////            }
-//
-//        // make next points rare
-//        nextIndexToInsertTo = indexInArrayForDrawing + 1;
-//        for (int i = indexInArrayForDrawing + 1; i < pointIndexesToDrawLabel.length && nextIndexToInsertTo < pointIndexesToDrawLabel.length; i++) {
-//            if ((i - indexInArrayForDrawing) % 2 == 0) {
-//                newPointsToDraw[nextIndexToInsertTo++] = pointIndexesToDrawLabel[i];
-//            } else {
-//                pointsToFade.add(pointIndexesToDrawLabel[i]);
-//            }
-//        }
-//
-//        while (nextIndexToInsertTo < pointIndexesToDrawLabel.length) {
-//            newPointsToDraw[nextIndexToInsertTo] = newPointsToDraw[nextIndexToInsertTo - 1] + existingPointsGap * 2;
-//            nextIndexToInsertTo++;
-//        }
-////        }
-//
-//        fadePointIndexes.clear();
-//        fadePointIndexes.addAll(pointsToFade);
-////        Timber.d("!!!=== makePointsRare(); all points: " + Arrays.toString(pointIndexesToDrawLabel) + ", points to fade: " + pointsToFade.toString() + ", new points to draw: " + Arrays.toString(newPointsToDraw) + ", existing gap: " + existingPointsGap);
-//
-//        pointIndexesToDrawLabel = newPointsToDraw;
-//    }
-//
-//    private void makePointsCloser(int pointIndexInLabelArray) {
-//
-//        int indexInArrayForDrawing = 0;
-//
-//        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-//            if (pointIndexesToDrawLabel[i] == pointIndexInLabelArray) {
-//                indexInArrayForDrawing = i;
-//                break;
-//            }
-//        }
-//
-//        int existingPointsGap = pointIndexesToDrawLabel[4] - pointIndexesToDrawLabel[3];
-//
-//        if (existingPointsGap <= 1) return;
-//
-//        pointsInOnePartition = existingPointsGap / 2;
-//
-//        int newPointsToDraw[] = new int[pointIndexesToDrawLabel.length];
-//        List<Integer> pointsToFade = new ArrayList<>();
-//
-//        newPointsToDraw[indexInArrayForDrawing] = pointIndexInLabelArray;
-//
-//        // между существующими точками вставить еще одну точку посередине, при этом оставить точку на indexArrayForDrawing на месте
-//
-//        // добавить точек в начале//todo: start from here: add some points between the existing ones
-//        int nextIndexToInsertTo = indexInArrayForDrawing - 1;
-//
-////        for (int i = indexInArrayForDrawing - 1; i >= indexInArrayForDrawing && nextIndexToInsertTo >= 0; i--) {
-//
-////        Timber.d("stop");
-////        for (int i = indexInArrayForDrawing - 1; i >= 0 && nextIndexToInsertTo >= 0; i--) {
-////            if ((indexInArrayForDrawing - i) % 2 == 1) {
-////                newPointsToDraw[nextIndexToInsertTo] = newPointsToDraw[nextIndexToInsertTo + 1] - existingPointsGap / 2; //pointIndexesToDrawLabel[i];
-////                pointsToFade.add(newPointsToDraw[nextIndexToInsertTo]);
-////            } else {
-////                newPointsToDraw[nextIndexToInsertTo] = pointIndexesToDrawLabel[(indexInArrayForDrawing - i) / 2];
-////            }
-////            nextIndexToInsertTo--;
-////        }
-//
-//        Timber.d("stop");
-//        for (int i = 0; i < indexInArrayForDrawing && nextIndexToInsertTo >= 0; i++) {
-//            if (i % 2 == 0) {
-//                int newPointIndex = newPointsToDraw[nextIndexToInsertTo + 1] - existingPointsGap / 2;
-//                if (Arrays.binarySearch(pointIndexesToDrawLabel, newPointIndex) != -1) {
-//                    newPointsToDraw[nextIndexToInsertTo] = newPointIndex; //newPointsToDraw[nextIndexToInsertTo + 1] - existingPointsGap / 2; //pointIndexesToDrawLabel[i];
-//                    pointsToFade.add(newPointsToDraw[nextIndexToInsertTo]);
-//                }
-//            } else {
-//                newPointsToDraw[nextIndexToInsertTo] = pointIndexesToDrawLabel[indexInArrayForDrawing - i / 2 - 1];
-//            }
-//            nextIndexToInsertTo--;
-//        }
-//
-//
-////        while (nextIndexToInsertTo >= 0) {
-////            newPointsToDraw[nextIndexToInsertTo] = newPointsToDraw[nextIndexToInsertTo + 1] - existingPointsGap / 2;
-////            nextIndexToInsertTo--;
-////        }
-////            }
-//
-//        // make next points rare
-//        nextIndexToInsertTo = indexInArrayForDrawing + 1;
-//        for (int i = indexInArrayForDrawing + 1; i < pointIndexesToDrawLabel.length && nextIndexToInsertTo < pointIndexesToDrawLabel.length; i++) {
-//            if ((i - indexInArrayForDrawing) % 2 == 1) {
-//                newPointsToDraw[nextIndexToInsertTo] = newPointsToDraw[nextIndexToInsertTo - 1] + existingPointsGap / 2; //pointIndexesToDrawLabel[i];
-//                pointsToFade.add(newPointsToDraw[nextIndexToInsertTo]);
-//            } else {
-//                newPointsToDraw[nextIndexToInsertTo] = pointIndexesToDrawLabel[(indexInArrayForDrawing + i) / 2];
-////                pointsToFade.add(pointIndexesToDrawLabel[i]);
-//            }
-//            nextIndexToInsertTo++;
-//        }
-//
-////        while (nextIndexToInsertTo < pointIndexesToDrawLabel.length) {
-////            newPointsToDraw[nextIndexToInsertTo] = newPointsToDraw[nextIndexToInsertTo - 1] + existingPointsGap * 2;
-////            nextIndexToInsertTo++;
-////        }
-////        }
-//
-//        Timber.d("!!!=== makePointsCloser(); all points: " + Arrays.toString(pointIndexesToDrawLabel) + ", points to fade: " + pointsToFade.toString() + ", new points to draw: " + Arrays.toString(newPointsToDraw) + ", existing gap: " + existingPointsGap + ", pointIndexInLabelArray: " + pointIndexInLabelArray);
-//
-//        fadePointIndexes.clear();
-//
-//        fadePointIndexes.addAll(pointsToFade);
-//
-//        pointIndexesToDrawLabel = newPointsToDraw;
-//
-//    }
-//
-//    private void reorganizeHorizontalLabelsForDrawing() {
-//        while (isPointLabelNotVisibleYet(pointIndexesToDrawLabel[1])) { // как только 1-ая уходит за ноль
-//            moveFirstPointToTheTail(); // , то перенести 0-ую в конец
-//        }
-//
-//        while (isPointLabelNotVisibleAlready(pointIndexesToDrawLabel[pointIndexesToDrawLabel.length - 2])) { // как только предпоследняя уходит за границу
-//            moveLastPointToTheBeginning(); // то перенести последнюю в начало
-//        }
-//    }
-//
-//    private void moveFirstPointToTheTail() {
-//        for (int i = 0; i < pointIndexesToDrawLabel.length - 1; i++) {
-//            pointIndexesToDrawLabel[i] = pointIndexesToDrawLabel[i + 1];
-//        }
-//
-//        int newIndex = pointIndexesToDrawLabel[pointIndexesToDrawLabel.length - 2] + Math.round(pointsInOnePartition);
-//        pointIndexesToDrawLabel[pointIndexesToDrawLabel.length - 1] = newIndex;
-//    }
-//
-//    private void moveLastPointToTheBeginning() {
-//        for (int i = pointIndexesToDrawLabel.length - 1; i > 0; i--) {
-//            pointIndexesToDrawLabel[i] = pointIndexesToDrawLabel[i - 1];
-//        }
-//
-//        int newIndex = pointIndexesToDrawLabel[1] - Math.round(pointsInOnePartition);
-//        pointIndexesToDrawLabel[0] = newIndex;
-//    }
-
-    private boolean isPointLabelNotVisibleYet(int pointIndex) {
-        if (isPointIndexValid(pointIndex)) {
-            String label = chart.getAbscissaAsString().get(pointIndex);
-
-            float labelWidth = labelPaint.measureText(label);
-
-            float labelStartX = x0 + xStep * pointIndex - labelWidth / 2;
-            float labelEndX = labelStartX + labelWidth;
-
-            return (labelEndX < 0);
-        } else {
-            return true;
-        }
-    }
-
-    private boolean isPointLabelNotVisibleAlready(int pointIndex) {
-        if (isPointIndexValid(pointIndex)) {
-            String label = chart.getAbscissaAsString().get(pointIndex);
-
-            float labelWidth = labelPaint.measureText(label);
-
-            float labelStartX = x0 + xStep * pointIndex - labelWidth / 2;
-
-            return (labelStartX > width);
-        } else {
-            return true;
-        }
-    }
-
-    private boolean isPointLabelFullyVisible(int pointIndex) {
-        if (isPointIndexValid(pointIndex)) {
-            String label = chart.getAbscissaAsString().get(pointIndex);
-            float labelWidth = labelPaint.measureText(label);
-            float labelStartX = x0 + xStep * pointIndex - labelWidth / 2;
-            float labelEndX = labelStartX + labelWidth;
-
-            return labelStartX > 0 && labelEndX < width;
-        } else {
-            return false;
-        }
-    }
-
-//    private int minimumLimitBetweenLabels = 30;
-//    private int maximumLimitBetweenLabels = 100;
 
     private boolean areNeightborPointsTooClose(int firstPointIndex, int secondPointIndex) {
         if (isPointIndexValid(firstPointIndex) && isPointIndexValid(secondPointIndex)) {
@@ -933,42 +632,8 @@ class DetailedChartView extends View {
         }
     }
 
-//    private boolean isTooMuchSpaceOnStart() {
-//        int firstVisible = getFirstVisibleNamedPoint();
-//
-//        String labelOne = chart.getAbscissaAsString().get(firstVisible);
-//        float labelOneWidth = labelPaint.measureText(labelOne);
-//        float labelOneStartX = x0 + xStep * firstVisible - labelOneWidth / 2;
-//
-//        return labelOneStartX > TOO_FAR_CONSTANT * 2;
-//    }
-//
-//    private boolean isTooMuchSpaceOnEnd() {
-//        int lastVisible = getLastVisibleNamedPoint();
-//
-//        String label = chart.getAbscissaAsString().get(lastVisible);
-//        float labelOneWidth = labelPaint.measureText(label);
-//        float labelOneStartX = x0 + xStep * lastVisible - labelOneWidth / 2;
-//        float labelOneEndX = labelOneStartX + labelOneWidth;
-//
-//        return width - TOO_FAR_CONSTANT * 2 > labelOneEndX;
-//
-//    }
-
     private boolean isPointIndexValid(int index) {
         return index >= firstDateIndex && index <= lastDateIndex;
-    }
-
-    private void onPointsTooClose() {
-        increaseScale();
-//        makePointsRare(startIsStable ? getFirstVisibleNamedPoint() : getLastVisibleNamedPoint());
-        animateHorizontalLabels(false);
-    }
-
-    private void onPointsTooFar() {
-        decreaseScale();
-//        makePointsCloser(startIsStable ? getFirstVisibleNamedPoint() : getLastVisibleNamedPoint());
-        animateHorizontalLabels(true);
     }
 
     private ValueAnimator horizontalLabelsAnimator = null;
@@ -983,7 +648,7 @@ class DetailedChartView extends View {
 
         horizontalLabelsAnimator = ValueAnimator.ofFloat(appear ? 0.0f : 1.0f, appear ? 1.0f : 0.0f);
 
-        horizontalLabelsAnimator.setDuration(ANIMATION_DURATION);
+        horizontalLabelsAnimator.setDuration(200);
         horizontalLabelsAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
@@ -1010,7 +675,7 @@ class DetailedChartView extends View {
 
     private void drawHorizontalLabels(Canvas canvas) {
 
-        boolean animationInProgress = labelsAlphaAnimationInProgress; //!(horizontalLabelsAlpha == 0.0f || horizontalLabelsAlpha == 1.0f);
+        boolean animationInProgress = labelsAlphaAnimationInProgress;
 
         if (animationInProgress) {
             int color = Color.argb(
@@ -1024,7 +689,7 @@ class DetailedChartView extends View {
 
             for (int i : fadePointIndexes) {
 
-                if (isPointIndexValid(i)) {
+                if (isPointIndexValid(i) && i != firstDateIndex && i != lastDateIndex) {
                     float x = x0 + xStep * i;
 
                     canvas.drawText(
@@ -1040,7 +705,7 @@ class DetailedChartView extends View {
         }
 
         for (int i = firstVisiblePointIndex; i <= lastVisiblePointIndex; i++) {
-            if (labelsVisibility[i]) {
+            if (labelsVisibility[i] && i != firstDateIndex && i != lastDateIndex) {
                 if (!animationInProgress || !fadePointIndexes.contains(i)) {
                     canvas.drawText(
                             chart.getAbscissaAsString().get(i),
@@ -1051,79 +716,6 @@ class DetailedChartView extends View {
                 }
             }
         }
-
-//        //calculating labels coordinates
-//        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-//            labelXCoords[i] = x0 + xStep * pointIndexesToDrawLabel[i];
-//        }
-//
-//        boolean isFirstPoint = true;
-//
-//        int firstPointIndex = getFirstVisibleNamedPoint();
-//
-//        int indexInArrayForDrawing = 0;
-//
-//        for (int i = 0; i < pointIndexesToDrawLabel.length; i++) {
-//            if (pointIndexesToDrawLabel[i] == firstPointIndex) {
-//                indexInArrayForDrawing = i;
-//                break;
-//            }
-//        }
-//
-//        if (indexInArrayForDrawing == pointIndexesToDrawLabel.length - 1) {
-//            isFirstPoint = false;
-//
-//            int lastPointIndex = getLastVisibleNamedPoint();
-//
-//            for (int i = pointIndexesToDrawLabel.length - 1; i >= 0; i--) {
-//                if (pointIndexesToDrawLabel[i] == lastPointIndex) {
-//                    indexInArrayForDrawing = i;
-//                    break;
-//                }
-//            }
-//        }
-//
-//        int secondIndex = isFirstPoint ? indexInArrayForDrawing + 1 : indexInArrayForDrawing - 1;
-
-        //todo: check for scale after init
-//        isTooMuchSpaceOnStart()
-//        isTooMuchSpaceOnEnd()
-//        areNeightborPointsTooClose(pointIndexesToDrawLabel[indexInArrayForDrawing], pointIndexesToDrawLabel[secondIndex])
-//        areNeighbourPointsTooFar(pointIndexesToDrawLabel[indexInArrayForDrawing], pointIndexesToDrawLabel[secondIndex])
-//        onPointsTooClose();
-//        onPointsTooFar();
-
-//        if (isTooMuchSpaceOnStart() || isTooMuchSpaceOnEnd()) {
-//            onPointsTooFar();
-//        } else if (areNeightborPointsTooClose(pointIndexesToDrawLabel[indexInArrayForDrawing], pointIndexesToDrawLabel[secondIndex])) {
-//            onPointsTooClose();
-//        } else if (
-//                areNeighbourPointsTooFar(pointIndexesToDrawLabel[indexInArrayForDrawing], pointIndexesToDrawLabel[secondIndex])
-//
-//        ) {
-//            onPointsTooFar();
-//        }
-//        boolean close = ;
-
-//        boolean far = ;
-//        Timber.d("close: " + close + ", far: " + far);
-
-
-        //drawing
-//        for (int i = 0; i < labelXCoords.length; i++) {
-//            if (isPointIndexValid(pointIndexesToDrawLabel[i])) {
-//                if (!animationInProgress || !fadePointIndexes.contains(pointIndexesToDrawLabel[i])) {
-//                    canvas.drawText(
-//                            chart.getAbscissaAsString().get(pointIndexesToDrawLabel[i]),
-//                            labelXCoords[i],
-//                            horizontalLabelY,
-//                            labelPaint
-//                    );
-//                }
-//            }
-//        }
-
-
     }
 
     private float previousX;
@@ -1202,9 +794,7 @@ class DetailedChartView extends View {
 
         linesCount = chart.getLineIds().size();
 
-
         onChartAndWidthReady();
-//        initHorizontalLabelsToDraw();
 
         initVariablesForVerticalChartDrawing();
 
