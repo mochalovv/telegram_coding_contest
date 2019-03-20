@@ -49,7 +49,7 @@ class ChartNavigationView extends View {
 
     public interface PeriodChangedListener {
         //  0.0 <= x <= 1.0
-        void onPeriodLengthChanged(double periodStart, double periodEnd);
+        void onPeriodLengthChanged(double periodStart, double periodEnd, boolean startIsStable); // only startIsStable - end is dragged
 
         // 0.0 <= x <= 1.0
         void onPeriodMoved(double periodStart, double periodEnd);
@@ -187,8 +187,12 @@ class ChartNavigationView extends View {
                                 if (periodChangedListener != null & dx != 0) {
                                     if (touchType == TouchType.FRAME_TOUCH) {
                                         periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
-                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+//                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
+//                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
+                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, false);
+                                    } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
+                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
                                     }
                                 }
                             }
@@ -217,7 +221,7 @@ class ChartNavigationView extends View {
                 double frameStartInPercent = frameStart / width;
                 double frameEndInPercent = (frameStart + frameWidth) / width;
 
-                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
 
                 initialValueIsSent = true;
 
