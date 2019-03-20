@@ -69,8 +69,8 @@ public class ChartView extends LinearLayout {
         chartNavigationView.setPeriodChangedListener(
                 new ChartNavigationView.PeriodChangedListener() {
                     @Override
-                    public void onPeriodLengthChanged(double periodStart, double periodEnd) {
-                        detailedChartView.onVisibleRangeScaleChanged(periodStart, periodEnd);
+                    public void onPeriodLengthChanged(double periodStart, double periodEnd, boolean startIsStable) {
+                        detailedChartView.onVisibleRangeScaleChanged(periodStart, periodEnd, startIsStable);
                     }
 
                     @Override

@@ -1,5 +1,6 @@
 package ru.vmochalov.vkchart.view;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -32,6 +33,7 @@ class ChartNavigationView extends View {
     private Chart chart;
 
     private boolean[] lineVisibility;
+    private int[] lineAlpha;
 
     // styleable attributes
     private float lineStrokeWidth = 5;
@@ -47,7 +49,7 @@ class ChartNavigationView extends View {
 
     public interface PeriodChangedListener {
         //  0.0 <= x <= 1.0
-        void onPeriodLengthChanged(double periodStart, double periodEnd);
+        void onPeriodLengthChanged(double periodStart, double periodEnd, boolean startIsStable); // only startIsStable - end is dragged
 
         // 0.0 <= x <= 1.0
         void onPeriodMoved(double periodStart, double periodEnd);
@@ -185,8 +187,12 @@ class ChartNavigationView extends View {
                                 if (periodChangedListener != null & dx != 0) {
                                     if (touchType == TouchType.FRAME_TOUCH) {
                                         periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
-                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+//                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
+//                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
+                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, false);
+                                    } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
+                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
                                     }
                                 }
                             }
@@ -215,7 +221,7 @@ class ChartNavigationView extends View {
                 double frameStartInPercent = frameStart / width;
                 double frameEndInPercent = (frameStart + frameWidth) / width;
 
-                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
+                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
 
                 initialValueIsSent = true;
 
@@ -276,10 +282,38 @@ class ChartNavigationView extends View {
         duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
     }
 
+    private ValueAnimator maxValueAnimator;
+
+    private static int ANIMATION_DURATION = 300;
+
     private void onLinesChanged() {
+        int newMaxValue = getMaxVisibleValue();
+
+        if (newMaxValue != maxValue) {
+            if (maxValueAnimator != null) {
+                maxValueAnimator.pause();
+            }
+
+            maxValueAnimator = ValueAnimator.ofInt(maxValue, newMaxValue);
+            maxValueAnimator.setDuration(ANIMATION_DURATION);
+            maxValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    int value = (int) animation.getAnimatedValue();
+
+                    updateVerticalDrawingParams(value);
+                    invalidate();
+                }
+            });
+            maxValueAnimator.start();
+        }
+    }
+
+    private void updateVerticalDrawingParams(int maxValue) {
         if (height != 0) {
             yStep = (height - topChartPadding - bottomChartPadding) / maxValue;
         }
+        this.maxValue = maxValue;
     }
 
     private void drawBackground(Canvas canvas) {
@@ -316,10 +350,15 @@ class ChartNavigationView extends View {
         }
 
         for (int lineIndex = 0; lineIndex < linesCount; lineIndex++) {
-            if (!lineVisibility[lineIndex]) continue; // do not show muted lines
+            if (lineAlpha[lineIndex] == 0) continue; // do not show muted lines
 
             chartOrdinate = chart.getOrdinates().get(lineIndex);
-            chartPaintActive.setColor(chart.getColors().get(lineIndex));
+
+            int tempColor = chart.getColors().get(lineIndex);
+
+            chartPaintActive.setColor(
+                    Color.argb(lineAlpha[lineIndex], Color.red(tempColor), Color.green(tempColor), Color.blue(tempColor))
+            );
 
             chartPointsIndex = 0;
 
@@ -363,7 +402,9 @@ class ChartNavigationView extends View {
         lineVisibility = new boolean[chart.getLineIds().size()];
         Arrays.fill(lineVisibility, true);
 
-        this.maxValue = getMaxVisibleValue();
+        lineAlpha = new int[chart.getLineIds().size()];
+        Arrays.fill(lineAlpha, 0xff);
+
         this.periodStartDateIndex = 20;
         this.periodEndDateIndex = 50;
 
@@ -377,12 +418,33 @@ class ChartNavigationView extends View {
         invalidate();
     }
 
+    private ValueAnimator alphaValueAnimator;
+
     public void setLineVisibility(String lineId, boolean visible) {
-        int lineIndex = chart.getLineIds().indexOf(lineId);
+        final int lineIndex = chart.getLineIds().indexOf(lineId);
         if (lineIndex > -1) {
+
+            if (lineVisibility[lineIndex] != visible) {
+                if (alphaValueAnimator != null) {
+                    alphaValueAnimator.end();
+                }
+
+                alphaValueAnimator = ValueAnimator.ofInt(visible ? 0 : 0xff, visible ? 0xff : 0);
+                alphaValueAnimator.setDuration(ANIMATION_DURATION);
+                alphaValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                    @Override
+                    public void onAnimationUpdate(ValueAnimator animation) {
+                        int value = (int) animation.getAnimatedValue();
+                        lineAlpha[lineIndex] = value;
+                        invalidate();
+                    }
+                });
+                alphaValueAnimator.start();
+
+            }
+
             lineVisibility[lineIndex] = visible;
 
-            maxValue = getMaxVisibleValue();
             onLinesChanged();
         }
 
@@ -415,11 +477,7 @@ class ChartNavigationView extends View {
         return max;
     }
 
-    private boolean nightModeOn;
-
     public void setNightMode(boolean nightModeOn) {
-        this.nightModeOn = nightModeOn;
-
         activeBackgroundPaint.setColor(nightModeOn ? activeBackgroundColorNightMode : activeBackgroundColor);
         duff.setColor(nightModeOn ? passiveBackgroundColorNightMode : passiveBackgroundColor);
         framePaint.setColor(nightModeOn ? frameColorNightMode : frameColor);
