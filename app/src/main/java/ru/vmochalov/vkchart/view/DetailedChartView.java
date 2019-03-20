@@ -10,6 +10,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
@@ -20,7 +21,6 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.Chart;
-import timber.log.Timber;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
@@ -47,10 +47,22 @@ class DetailedChartView extends View {
 
     private List<Integer> fadePointIndexes = new ArrayList<>();
 
+    private OnChartClickedListener onChartClickedListener;
+
+
+    public interface OnChartClickedListener {
+        void onTouch(float x, int pointIndex, List<Integer> values);
+
+        void onMove(float x, int pointIndex, List<Integer> values);
+
+        void onButtonUp();
+    }
+
     public DetailedChartView(Context context) {
         super(context);
 
         initViewWideProperties();
+        initTouchListener();
     }
 
     public DetailedChartView(Context context, AttributeSet attributeSet) {
@@ -58,6 +70,7 @@ class DetailedChartView extends View {
 
         handleAttributeSet(attributeSet);
         initViewWideProperties();
+        initTouchListener();
     }
 
     public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
@@ -65,6 +78,7 @@ class DetailedChartView extends View {
 
         handleAttributeSet(attributeSet);
         initViewWideProperties();
+        initTouchListener();
     }
 
     public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
@@ -72,6 +86,7 @@ class DetailedChartView extends View {
 
         handleAttributeSet(attributeSet);
         initViewWideProperties();
+        initTouchListener();
     }
 
     private void handleAttributeSet(AttributeSet attributeSet) {
@@ -193,6 +208,68 @@ class DetailedChartView extends View {
     private void initVariablesForChartDrawing() {
         initVariablesForHorizontalChartDrawing();
         initVariablesForVerticalChartDrawing();
+    }
+
+    public void setOnChartClickedListener(OnChartClickedListener listener) {
+        this.onChartClickedListener = listener;
+    }
+
+    public void initTouchListener() {
+        setOnTouchListener(new OnTouchListener() {
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    lastSelectedPointIndex = getNearestPointIndex(event.getX());
+
+                    collectVisibleSelectedValues(lastSelectedPointIndex);
+
+                    if (onChartClickedListener != null) {
+                        onChartClickedListener.onTouch(event.getX(), lastSelectedPointIndex, visibleSelectedValues);
+                    }
+                } else if (event.getAction() == MotionEvent.ACTION_UP) {
+                    lastSelectedPointIndex = -1;
+
+                    if (onChartClickedListener != null) {
+                        onChartClickedListener.onButtonUp();
+                    }
+
+                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    lastSelectedPointIndex = getNearestPointIndex(event.getX());
+                    collectVisibleSelectedValues(lastSelectedPointIndex);
+
+                    if (onChartClickedListener != null) {
+                        onChartClickedListener.onTouch(event.getX(), lastSelectedPointIndex, visibleSelectedValues);
+                    }
+                }
+
+                invalidate();
+
+                return true;
+            }
+        });
+    }
+
+    private List<Integer> visibleSelectedValues = new ArrayList<>();
+    private int lastSelectedPointIndex = -1;
+
+    private List<Integer> collectVisibleSelectedValues(int index) {
+        visibleSelectedValues.clear();
+
+        for (int i = 0; i < chart.getLineIds().size(); i++) {
+            if (linesVisibility[i]) {
+                visibleSelectedValues.add(chart.getOrdinates().get(i).get(index));
+            }
+        }
+
+        return visibleSelectedValues;
+    }
+
+    private int getNearestPointIndex(float x) {
+        int result = Math.round((x - x0) / xStep);
+        if (result < firstDateIndex) result = firstDateIndex;
+        if (result > lastDateIndex) result = lastDateIndex;
+        return result;
     }
 
     private void initVariablesForHorizontalChartDrawing() {
@@ -368,6 +445,7 @@ class DetailedChartView extends View {
 
         drawChart(canvas);
 
+        drawSelectedPoints(canvas);
         drawVerticalLabels(canvas);
         drawHorizontalLabels(canvas);
     }
@@ -375,6 +453,42 @@ class DetailedChartView extends View {
 
     private void drawBackground(Canvas canvas) {
         canvas.drawRect(0, 0, width, height, backgroundPaint);
+    }
+
+    private void drawSelectedPoints(Canvas canvas) {
+        if (lastSelectedPointIndex < 0) return;
+
+        nextX = x0 + xStep * lastSelectedPointIndex;
+
+        canvas.drawLine(
+                nextX,
+                0,
+                nextX,
+                height - bottomAxisMargin,
+                verticalAxisPaint
+        );
+
+        for (int i = 0; i < linesCount; i++) {
+            if (linesVisibility[i]) {
+
+                tempColor = chart.getColors().get(i);
+
+                int color = Color.argb(
+                        linesAlphas[i],
+                        Color.red(tempColor),
+                        Color.green(tempColor),
+                        Color.blue(tempColor)
+                );
+
+                chartPaint.setColor(color);
+
+                pointValue = chart.getOrdinates().get(i).get(lastSelectedPointIndex);
+                nextY = height - bottomAxisMargin - pointValue * yStep;
+
+                canvas.drawCircle(nextX, nextY, 10, backgroundPaint);
+                canvas.drawCircle(nextX, nextY, 10, chartPaint);
+            }
+        }
     }
 
     //to use inside the method only
@@ -426,9 +540,9 @@ class DetailedChartView extends View {
 
         for (int i = 1; i < levelsCount; i++) {
             if (appearFromBottom) {
-                verticalYAxisCoord = height - bottomAxisMargin - i * yDelta * animationFraction;
+                verticalYAxisCoord = height - bottomAxisMargin - (i - 1) * yDelta - yDelta * animationFraction;
             } else {
-                verticalYAxisCoord = height - bottomAxisMargin - (levelsCount) * yDelta + i * yDelta * animationFraction;
+                verticalYAxisCoord = height - bottomAxisMargin - (levelsCount) * yDelta + (i - 1) * yDelta + yDelta * animationFraction;
             }
             verticalAxesLinesCoords[4 * i] = 0;
             verticalAxesLinesCoords[4 * i + 1] = verticalYAxisCoord;
@@ -475,10 +589,10 @@ class DetailedChartView extends View {
 
         for (int i = 1; i < levelsCount; i++) {
             if (appearFromBottom) {
-                verticalYAxisCoordAnimation = height - bottomAxisMargin - (i * yDelta) * animationFraction;
+                verticalYAxisCoordAnimation = height - bottomAxisMargin - (i - 1) * yDelta - yDelta * animationFraction;
                 canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
             } else {
-                verticalYAxisCoordAnimation = height - bottomAxisMargin - (levelsCount) * yDelta + ((levelsCount - i) * yDelta) * animationFraction;
+                verticalYAxisCoordAnimation = height - bottomAxisMargin - (levelsCount) * yDelta + (levelsCount - i - 1) * yDelta + yDelta * animationFraction;
                 canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
             }
         }
@@ -578,16 +692,6 @@ class DetailedChartView extends View {
             currentLabelsScale = newScale;
 
             setScaleForHorizontalLabels(newScale);
-        }
-    }
-
-    private void increaseScale() {
-        currentLabelsScale++;
-    }
-
-    private void decreaseScale() {
-        if (currentLabelsScale > 0) {
-            currentLabelsScale--;
         }
     }
 

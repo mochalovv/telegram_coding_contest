@@ -3,20 +3,26 @@ package ru.vmochalov.vkchart.view;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.json.JSONException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.dto.Chart;
 import timber.log.Timber;
+
+import static android.util.TypedValue.COMPLEX_UNIT_SP;
 
 /**
  * Created by Vladimir Mochalov on 17.03.2019.
@@ -26,6 +32,14 @@ public class ChartView extends LinearLayout {
     private DetailedChartView detailedChartView;
     private ChartNavigationView chartNavigationView;
     private LinearLayout chartContainer;
+
+    private View infoView;
+    private TextView dateView;
+    private LinearLayout valuesView;
+    private LinearLayout namesView;
+
+    private List<TextView> valueViews = new ArrayList<>();
+    private List<TextView> nameViews = new ArrayList<>();
 
     public ChartView(Context context) {
         super(context);
@@ -65,6 +79,10 @@ public class ChartView extends LinearLayout {
         detailedChartView = findViewById(R.id.chart);
         chartNavigationView = findViewById(R.id.chartNavigation);
         chartContainer = findViewById(R.id.chartContainer);
+        infoView = findViewById(R.id.infoView);
+        dateView = findViewById(R.id.dateView);
+        valuesView = findViewById(R.id.values);
+        namesView = findViewById(R.id.chartNames);
 
         chartNavigationView.setPeriodChangedListener(
                 new ChartNavigationView.PeriodChangedListener() {
@@ -80,32 +98,38 @@ public class ChartView extends LinearLayout {
 
                     @Override
                     public void onPeriodModifyFinished() {
-                        Timber.d("onPeriodModifyFinished()");
                     }
                 }
         );
     }
 
+    private Chart chart;
+    private boolean[] visibility;
 
     public void setChartData(String jsonSource) {
-        Chart chart = parseChartFromJson(jsonSource);
+        chart = parseChartFromJson(jsonSource);
 
         if (chart != null) {
             detailedChartView.setChart(chart);
             chartNavigationView.setChart(chart);
 
-            List<String> lineIds = chart.getLineIds();
+            final List<String> lineIds = chart.getLineIds();
             List<String> lineLabels = chart.getLabels();
             List<Integer> colors = chart.getColors();
+            visibility = new boolean[lineIds.size()];
+            Arrays.fill(visibility, true);
 
             for (int i = 0; i < lineIds.size(); i++) {
+                String tag = lineIds.get(i);
+
                 CheckBox checkBox = new CheckBox(getContext());
                 checkBox.setText(lineLabels.get(i));
-                checkBox.setTag(lineIds.get(i));
+                checkBox.setTag(tag);
                 checkBox.setButtonTintList(
                         ColorStateList.valueOf(colors.get(i))
                 );
                 checkBox.setChecked(true);
+                final int index = i;
                 checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -113,11 +137,91 @@ public class ChartView extends LinearLayout {
 
                         detailedChartView.setLineVisibility(lineId, isChecked);
                         chartNavigationView.setLineVisibility(lineId, isChecked);
+
+                        visibility[index] = isChecked;
+
+                        infoView.findViewWithTag(lineId).setVisibility(isChecked ? View.VISIBLE : View.GONE);
+                        namesView.findViewWithTag(lineId).setVisibility(isChecked ? View.VISIBLE : View.GONE);
                     }
                 });
 
                 chartContainer.addView(checkBox);
+
+                TextView valueTextView = new TextView(getContext());
+                valueTextView.setTag(tag);
+                valueTextView.setTextSize(COMPLEX_UNIT_SP, 14);
+                valueTextView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+                valueTextView.setTextColor(colors.get(i));
+
+                valuesView.addView(valueTextView);
+
+                valueViews.add(valueTextView);
+
+                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) valueTextView.getLayoutParams();
+                params.weight = 1;
+
+                TextView nameTextView = new TextView(getContext());
+                nameTextView.setTag(tag);
+                nameTextView.setTextColor(colors.get(i));
+                nameTextView.setText(tag);
+                nameTextView.setTextSize(COMPLEX_UNIT_SP, 12);
+                namesView.addView(nameTextView);
+
+                nameViews.add(nameTextView);
+
+                params = (LinearLayout.LayoutParams) nameTextView.getLayoutParams();
+                params.weight = 1;
+
             }
+
+            detailedChartView.setOnChartClickedListener(new DetailedChartView.OnChartClickedListener() {
+
+                @Override
+                public void onTouch(float x, int pointIndex, List<Integer> values) {
+                    updateInfo(pointIndex);
+                    if (!values.isEmpty()) {
+                        updateInfoViewX(x);
+                        infoView.setVisibility(View.VISIBLE);
+                    }
+                }
+
+                @Override
+                public void onMove(float x, int pointIndex, List<Integer> values) {
+                    if (infoView.getVisibility() == View.VISIBLE) {
+                        updateInfo(pointIndex);
+                        updateInfoViewX(x);
+                    }
+                }
+
+                @Override
+                public void onButtonUp() {
+                    infoView.setVisibility(View.GONE);
+                }
+
+
+                private void updateInfo(int pointIndex) {
+                    dateView.setText((chart.getAbscissaAsLongString().get(pointIndex)));
+
+                    for (int i = 0; i < visibility.length; i++) {
+
+                        if (visibility[i]) {
+                            valueViews.get(i).setText(chart.getOrdinates().get(i).get(pointIndex).toString());
+                        }
+                    }
+                }
+
+                private void updateInfoViewX(float x) {
+
+                    float newX = x + infoView.getWidth() / 2 + 30;
+
+                    if ((newX + infoView.getWidth()) > detailedChartView.getWidth()) {
+                        newX = detailedChartView.getWidth() - infoView.getWidth();
+                    }
+
+                    infoView.setX(newX);
+
+                }
+            });
         }
     }
 
@@ -125,7 +229,8 @@ public class ChartView extends LinearLayout {
         detailedChartView.setNightMode(nightModeOn);
         chartNavigationView.setNightMode(nightModeOn);
 
-        setBackgroundColor(getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground));
+        int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
+        setBackgroundColor(backgroundColor);
 
         for (int i = 0; i < chartContainer.getChildCount(); i++) {
             View view = chartContainer.getChildAt(i);
@@ -133,6 +238,9 @@ public class ChartView extends LinearLayout {
                 ((CheckBox) view).setTextColor(nightModeOn ? Color.WHITE : Color.BLACK);
             }
         }
+
+        infoView.setBackgroundColor(backgroundColor);
+        dateView.setTextColor(getResources().getColor(nightModeOn ? android.R.color.white : android.R.color.black));
     }
 
     private Chart parseChartFromJson(String jsonSource) {
