@@ -13,7 +13,8 @@ import java.util.List;
  */
 public class Chart {
 
-    private static DateFormat dateFormat = new SimpleDateFormat("MMM d");
+    public static DateFormat dateFormat = new SimpleDateFormat("MMM d");
+    public static DateFormat dateFormatExpanded = new SimpleDateFormat("E, MMM d");
 
     private String xId;
     private List<String> lineIds;
