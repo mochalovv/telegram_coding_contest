@@ -200,7 +200,7 @@ public class ChartView extends LinearLayout {
 
 
                 private void updateInfo(int pointIndex) {
-                    dateView.setText(Chart.dateFormatExpanded.format(chart.getAbscissa().get(pointIndex)));
+                    dateView.setText((chart.getAbscissaAsLongString().get(pointIndex)));
 
                     for (int i = 0; i < visibility.length; i++) {
 
