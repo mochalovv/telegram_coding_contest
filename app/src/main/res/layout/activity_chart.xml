@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<ScrollView
-
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true">
 
-    <ru.vmochalov.vkchart.view.ChartView
-        android:id="@+id/chartView"
+    <LinearLayout
+        android:id="@+id/chartContainer"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-    </ru.vmochalov.vkchart.view.ChartView>
+        android:layout_height="wrap_content"
+        android:orientation="vertical" />
 
 </ScrollView>

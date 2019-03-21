@@ -158,6 +158,7 @@ public class ChartView extends LinearLayout {
 
                 LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) valueTextView.getLayoutParams();
                 params.weight = 1;
+                params.rightMargin = 16;
 
                 TextView nameTextView = new TextView(getContext());
                 nameTextView.setTag(tag);
