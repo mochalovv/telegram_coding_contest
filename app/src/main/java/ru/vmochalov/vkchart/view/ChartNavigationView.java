@@ -23,10 +23,10 @@ class ChartNavigationView extends View {
     private float width;
     private float height;
 
-    private static final int firstDateIndex = 0;
+//    private static final int firstDateIndex = 0;
     private int lastDateIndex;
-    private int periodStartDateIndex;
-    private int periodEndDateIndex;
+//    private int periodStartDateIndex;
+//    private int periodEndDateIndex;
 
     private int maxValue;
 
@@ -36,7 +36,7 @@ class ChartNavigationView extends View {
     private int[] lineAlpha;
 
     // styleable attributes
-    private float lineStrokeWidth = 5;
+//    private float lineStrokeWidth = 5;
     private float frameHorizontalBorderWidth = 10;
     private float frameVerticalBorderWidth = 4;
 
@@ -405,8 +405,8 @@ class ChartNavigationView extends View {
         lineAlpha = new int[chart.getLineIds().size()];
         Arrays.fill(lineAlpha, 0xff);
 
-        this.periodStartDateIndex = 20;
-        this.periodEndDateIndex = 50;
+//        this.periodStartDateIndex = 20;
+//        this.periodEndDateIndex = 50;
 
         linesCount = chart.getLineIds().size();
         chartPoints = new float[4 * chart.getAbscissa().size()];
