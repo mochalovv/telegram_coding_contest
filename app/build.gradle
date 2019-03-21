@@ -1,16 +1,16 @@
 apply plugin: 'com.android.application'
 android {
-//    signingConfigs {
-//        vkchart {
-//            keyAlias 'vkchart'
-//            keyPassword 'vkchart'
-//            storeFile file('vkchart.jks')
-//            storePassword 'vkchart'
-//        }
-//    }
+    signingConfigs {
+        vkchart {
+            keyAlias 'vkchart'
+            keyPassword 'vkchart'
+            storeFile file('vkchart.jks')
+            storePassword 'vkchart'
+        }
+    }
     compileSdkVersion 28
     defaultConfig {
-        applicationId "ru.vmochalov.vkchart"
+        applicationId "ru.vmochalov.chart"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -20,7 +20,7 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-//            signingConfig signingConfigs.vkchart
+            signingConfig signingConfigs.vkchart
         }
     }
 }
