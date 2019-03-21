@@ -13,11 +13,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import timber.log.Timber;
-
-/**
- * Created by Vladimir Mochalov on 10.03.2019.
- */
 class ChartParser {
 
     public Chart fromJson(String json) throws JSONException {
@@ -89,16 +84,6 @@ class ChartParser {
                 }
             }
         }
-
-        Timber.d("xId: " + xId);
-        Timber.d("line ids: " + lineIds.toString());
-
-        Timber.d("labels: " + labels);
-        Timber.d("colors: " + colors);
-
-        Timber.d("abscissa: " + abscissa);
-        Timber.d("ordinates: " + ordinates);
-
         return new Chart(xId, lineIds, abscissa, ordinates, labels, colors);
     }
 

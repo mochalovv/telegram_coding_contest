@@ -419,12 +419,19 @@ class DetailedChartView extends View {
 
         onHeightChanged(height);
 
+        onChartAndHeightReady();
         onChartAndWidthReady();
     }
 
     private void onHeightChanged(float height) {
         horizontalLabelY = height - axesTextSize / 2;
         yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+    }
+
+    private void onChartAndHeightReady() {
+        if (height > 0 && chart != null) {
+            initVariablesForVerticalChartDrawing();
+        }
     }
 
     private void onChartAndWidthReady() {
@@ -894,8 +901,7 @@ class DetailedChartView extends View {
         linesCount = chart.getLineIds().size();
 
         onChartAndWidthReady();
-
-        initVariablesForVerticalChartDrawing();
+        onChartAndHeightReady();
 
         invalidate();
     }
