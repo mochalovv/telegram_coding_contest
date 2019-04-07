@@ -40,6 +40,16 @@ public class ChartView extends LinearLayout {
     private List<TextView> valueViews = new ArrayList<>();
     private List<TextView> nameViews = new ArrayList<>();
 
+    public interface MovementDirectionListener {
+        void onMovementDirectionChanged(boolean isHorizontalMovement);
+    }
+
+    private MovementDirectionListener listener;
+
+    public void setMovementDirectionListener(MovementDirectionListener listener) {
+        this.listener = listener;
+    }
+
     public ChartView(Context context) {
         super(context);
 
@@ -97,6 +107,13 @@ public class ChartView extends LinearLayout {
 
                     @Override
                     public void onPeriodModifyFinished() {
+                    }
+
+                    @Override
+                    public void onDragDirectionChanged(boolean horizontal) {
+                        if (listener != null) {
+                            listener.onMovementDirectionChanged(horizontal);
+                        }
                     }
                 }
         );
@@ -198,6 +215,16 @@ public class ChartView extends LinearLayout {
                     infoView.setVisibility(View.GONE);
                 }
 
+                @Override
+                public void onMovementDirectionChanged(boolean isHorizontal) {
+                    if (listener != null) {
+                        listener.onMovementDirectionChanged(isHorizontal);
+                    }
+
+                    if (!isHorizontal) {
+                        infoView.setVisibility(View.GONE);
+                    }
+                }
 
                 private void updateInfo(int pointIndex) {
                     dateView.setText((chart.getAbscissaAsLongString().get(pointIndex)));

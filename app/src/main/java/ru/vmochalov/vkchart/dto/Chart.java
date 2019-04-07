@@ -2,7 +2,6 @@ package ru.vmochalov.vkchart.dto;
 
 import org.json.JSONException;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,8 +12,8 @@ import java.util.List;
  */
 public class Chart {
 
-    public static DateFormat dateFormat = new SimpleDateFormat("MMM d");
-    public static DateFormat dateFormatExpanded = new SimpleDateFormat("E, MMM d");
+    public static SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d");
+    public static SimpleDateFormat dateFormatExpanded = new SimpleDateFormat("E, MMM d");
 
     private String xId;
     private List<String> lineIds;

@@ -23,10 +23,7 @@ class ChartNavigationView extends View {
     private float width;
     private float height;
 
-//    private static final int firstDateIndex = 0;
     private int lastDateIndex;
-//    private int periodStartDateIndex;
-//    private int periodEndDateIndex;
 
     private int maxValue;
 
@@ -36,7 +33,6 @@ class ChartNavigationView extends View {
     private int[] lineAlpha;
 
     // styleable attributes
-//    private float lineStrokeWidth = 5;
     private float frameHorizontalBorderWidth = 10;
     private float frameVerticalBorderWidth = 4;
 
@@ -55,6 +51,8 @@ class ChartNavigationView extends View {
         void onPeriodMoved(double periodStart, double periodEnd);
 
         void onPeriodModifyFinished();
+
+        void onDragDirectionChanged(boolean horizontal);
     }
 
     public ChartNavigationView(Context context) {
@@ -98,14 +96,22 @@ class ChartNavigationView extends View {
 
                     private TouchType touchType;
 
+                    private float initialX;
+                    private float initialY;
                     private float previousX;
                     private float dx;
                     private float x;
+                    private float y;
+
+                    private boolean isDragHorizontal;
 
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-
                         if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                            initialX = event.getX();
+                            initialY = event.getY();
+
+                            y = event.getY();
                             x = event.getX();
                             previousX = event.getX();
 
@@ -121,9 +127,12 @@ class ChartNavigationView extends View {
 
                         } else if (event.getAction() == MotionEvent.ACTION_UP) {
 
+                            isDragHorizontal = false;
+
                             if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
                                 if (periodChangedListener != null) {
                                     periodChangedListener.onPeriodModifyFinished();
+                                    periodChangedListener.onDragDirectionChanged(isDragHorizontal);
                                 }
                             }
 
@@ -131,6 +140,8 @@ class ChartNavigationView extends View {
                         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
 
                             if (touchType != TouchType.UNHANDLED_TOUCH) {
+
+                                y = event.getY();
 
                                 //do not handle points outside the view
                                 if (event.getX() < 0) {
@@ -187,21 +198,42 @@ class ChartNavigationView extends View {
                                 if (periodChangedListener != null & dx != 0) {
                                     if (touchType == TouchType.FRAME_TOUCH) {
                                         periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
-//                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
-//                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent);
                                     } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
                                         periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, false);
                                     } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
                                         periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
                                     }
                                 }
+                                boolean isHorizontal = isHorizontalMovement(x, y);
+
+                                if (isHorizontal != isDragHorizontal) {
+                                    isDragHorizontal = isHorizontal;
+                                    periodChangedListener.onDragDirectionChanged(isDragHorizontal);
+                                }
                             }
 
                             if (dx != 0) {
                                 ChartNavigationView.this.invalidate();
                             }
+                        } else {
+                            isDragHorizontal = false;
+
+                            if (periodChangedListener != null) {
+                                periodChangedListener.onDragDirectionChanged(isDragHorizontal);
+                            }
+
+                            return false;
                         }
+
                         return true;
+                    }
+
+                    private boolean isHorizontalMovement(float updatedX, float updatedY) {
+                        if (initialX == updatedX) return false;
+
+                        double tg = (updatedY - initialY) / (updatedX - initialX);
+
+                        return Math.abs(tg) < 1;
                     }
                 }
         );

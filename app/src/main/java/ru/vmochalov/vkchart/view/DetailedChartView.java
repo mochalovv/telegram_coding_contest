@@ -56,6 +56,8 @@ class DetailedChartView extends View {
         void onMove(float x, int pointIndex, List<Integer> values);
 
         void onButtonUp();
+
+        void onMovementDirectionChanged(boolean isHorizontal);
     }
 
     public DetailedChartView(Context context) {
@@ -228,9 +230,17 @@ class DetailedChartView extends View {
     public void initTouchListener() {
         setOnTouchListener(new OnTouchListener() {
 
+            private float initialX;
+            private float initialY;
+
+            private boolean isHorizontalMovement;
+
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    initialX = event.getX();
+                    initialY = event.getY();
+
                     lastSelectedPointIndex = getNearestPointIndex(event.getX());
 
                     collectVisibleSelectedValues(lastSelectedPointIndex);
@@ -240,17 +250,35 @@ class DetailedChartView extends View {
                     }
                 } else if (event.getAction() == MotionEvent.ACTION_UP) {
                     lastSelectedPointIndex = -1;
-
+                    isHorizontalMovement = false;
                     if (onChartClickedListener != null) {
                         onChartClickedListener.onButtonUp();
+                        onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
                     }
 
                 } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
                     lastSelectedPointIndex = getNearestPointIndex(event.getX());
                     collectVisibleSelectedValues(lastSelectedPointIndex);
 
+                    boolean isHorizontal = isHorizontalMovement(event.getX(), event.getY());
+                    if (isHorizontal != isHorizontalMovement) {
+                        isHorizontalMovement = isHorizontal;
+
+                        if (onChartClickedListener != null) {
+                            onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
+                        }
+
+                    }
+
                     if (onChartClickedListener != null) {
                         onChartClickedListener.onTouch(event.getX(), lastSelectedPointIndex, visibleSelectedValues);
+                    }
+                } else {
+                    isHorizontalMovement = false;
+                    lastSelectedPointIndex = -1;
+
+                    if (onChartClickedListener != null) {
+                        onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
                     }
                 }
 
@@ -258,6 +286,15 @@ class DetailedChartView extends View {
 
                 return true;
             }
+
+            private boolean isHorizontalMovement(float updatedX, float updatedY) {
+                if (initialX == updatedX) return false;
+
+                double tg = (updatedY - initialY) / (updatedX - initialX);
+
+                return Math.abs(tg) < 1;
+            }
+
         });
     }
 
@@ -419,12 +456,19 @@ class DetailedChartView extends View {
 
         onHeightChanged(height);
 
+        onChartAndHeightReady();
         onChartAndWidthReady();
     }
 
     private void onHeightChanged(float height) {
         horizontalLabelY = height - axesTextSize / 2;
         yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+    }
+
+    private void onChartAndHeightReady() {
+        if (height > 0 && chart != null) {
+            initVariablesForVerticalChartDrawing();
+        }
     }
 
     private void onChartAndWidthReady() {
@@ -894,8 +938,7 @@ class DetailedChartView extends View {
         linesCount = chart.getLineIds().size();
 
         onChartAndWidthReady();
-
-        initVariablesForVerticalChartDrawing();
+        onChartAndHeightReady();
 
         invalidate();
     }
