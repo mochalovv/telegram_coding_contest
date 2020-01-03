@@ -4,5 +4,5 @@
         android:id="@+id/nightMode"
         android:icon="@drawable/ic_mood_red_200_24dp"
         android:showAsAction="always"
-        android:title="Night mode" />
+        android:title="@string/menu_night_mode" />
 </menu>
