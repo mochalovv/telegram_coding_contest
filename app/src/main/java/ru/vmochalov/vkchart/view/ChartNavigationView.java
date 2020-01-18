@@ -8,18 +8,22 @@ import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import ru.vmochalov.vkchart.chart.Chart;
+import ru.vmochalov.vkchart.view.listeners.ChartNavigationTouchListener;
+import ru.vmochalov.vkchart.view.listeners.PeriodChangedListener;
 
-class ChartNavigationView extends View {
+import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 
+public class ChartNavigationView extends View {
+
+    private static final float INITIAL_FRAME_START_POSITION_PX = 0;
+    private static final float INITIAL_FRAME_WIDTH_PX = 300;
     private float width;
     private float height;
 
@@ -43,17 +47,25 @@ class ChartNavigationView extends View {
 
     private PeriodChangedListener periodChangedListener;
 
-    public interface PeriodChangedListener {
-        //  0.0 <= x <= 1.0
-        void onPeriodLengthChanged(double periodStart, double periodEnd, boolean startIsStable); // only startIsStable - end is dragged
+    private float firstPassiveStartPixel = 0;
+    private float frameStart = INITIAL_FRAME_START_POSITION_PX;
+    private float frameWidth = INITIAL_FRAME_WIDTH_PX;
 
-        // 0.0 <= x <= 1.0
-        void onPeriodMoved(double periodStart, double periodEnd);
-
-        void onPeriodModifyFinished();
-
-        void onDragDirectionChanged(boolean horizontal);
+    public interface FrameUpdatedListener {
+        void onFrameUpdated(float start, float width);
     }
+
+    private ChartNavigationTouchListener chartNavigationTouchListener = new ChartNavigationTouchListener(
+            INITIAL_FRAME_START_POSITION_PX,
+            INITIAL_FRAME_WIDTH_PX,
+            new FrameUpdatedListener() {
+                @Override
+                public void onFrameUpdated(float start, float width) {
+                    frameStart = start;
+                    frameWidth = width;
+                }
+            }
+    );
 
     public ChartNavigationView(Context context) {
         super(context);
@@ -83,161 +95,8 @@ class ChartNavigationView extends View {
         initVariableForDrawing();
     }
 
-    private enum TouchType {
-        LEFT_BORDER_TOUCH, FRAME_TOUCH, RIGHT_BORDER_TOUCH, UNHANDLED_TOUCH
-    }
-
-    private float borderTouchArea = 30; //px
-    private float minimumFrameWidth = 40; // px
-
     private void initTouchListener() {
-        setOnTouchListener(
-                new OnTouchListener() {
-
-                    private TouchType touchType;
-
-                    private float initialX;
-                    private float initialY;
-                    private float previousX;
-                    private float dx;
-                    private float x;
-                    private float y;
-
-                    private boolean isDragHorizontal;
-
-                    @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                            initialX = event.getX();
-                            initialY = event.getY();
-
-                            y = event.getY();
-                            x = event.getX();
-                            previousX = event.getX();
-
-                            if (x >= frameStart - borderTouchArea && x <= frameStart + borderTouchArea) {
-                                touchType = TouchType.LEFT_BORDER_TOUCH;
-                            } else if (x >= frameStart + frameWidth - borderTouchArea && x <= frameStart + frameWidth + borderTouchArea) {
-                                touchType = TouchType.RIGHT_BORDER_TOUCH;
-                            } else if (x >= frameStart && x <= frameStart + frameWidth) {
-                                touchType = TouchType.FRAME_TOUCH;
-                            } else {
-                                touchType = TouchType.UNHANDLED_TOUCH;
-                            }
-
-                        } else if (event.getAction() == MotionEvent.ACTION_UP) {
-
-                            isDragHorizontal = false;
-
-                            if (touchType == TouchType.LEFT_BORDER_TOUCH || touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                if (periodChangedListener != null) {
-                                    periodChangedListener.onPeriodModifyFinished();
-                                    periodChangedListener.onDragDirectionChanged(isDragHorizontal);
-                                }
-                            }
-
-                            touchType = null;
-                        } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-
-                            if (touchType != TouchType.UNHANDLED_TOUCH) {
-
-                                y = event.getY();
-
-                                //do not handle points outside the view
-                                if (event.getX() < 0) {
-                                    x = 0;
-                                } else if (event.getX() > width) {
-                                    x = width;
-                                } else {
-                                    x = event.getX();
-                                }
-
-                                dx = x - previousX;
-                                previousX = x;
-
-                                // do not allow frame move outside the view
-                                if ((touchType == TouchType.FRAME_TOUCH || touchType == TouchType.LEFT_BORDER_TOUCH) && frameStart + dx < 0) {
-                                    dx = -frameStart;
-                                } else if ((touchType == TouchType.FRAME_TOUCH || touchType == TouchType.RIGHT_BORDER_TOUCH) && frameStart + frameWidth + dx > width) {
-                                    dx = width - frameStart - frameWidth;
-                                }
-
-                                //do not allow frame be "left side right"
-                                if (touchType == TouchType.LEFT_BORDER_TOUCH) {
-                                    if (frameStart + dx + minimumFrameWidth > frameStart + frameWidth) {
-                                        dx = frameWidth - minimumFrameWidth;
-                                    }
-                                } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                    if (frameStart + frameWidth + dx < frameStart + minimumFrameWidth) {
-                                        dx = minimumFrameWidth - frameWidth;
-                                    }
-                                }
-
-                                // consume dx according to current event
-                                if (touchType == TouchType.FRAME_TOUCH) {
-                                    frameStart += dx;
-                                } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
-                                    frameStart += dx;
-                                    frameWidth -= dx;
-                                } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                    frameWidth += dx;
-                                }
-
-                                double frameStartInPercent = frameStart / width;
-                                double frameEndInPercent = (frameStart + frameWidth) / width;
-
-                                if (frameStartInPercent < 0) {
-                                    frameStartInPercent = 0;
-                                }
-
-                                if (frameEndInPercent > 1) {
-                                    frameEndInPercent = 1;
-                                }
-
-
-                                if (periodChangedListener != null & dx != 0) {
-                                    if (touchType == TouchType.FRAME_TOUCH) {
-                                        periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
-                                    } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
-                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, false);
-                                    } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                                        periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
-                                    }
-                                }
-                                boolean isHorizontal = isHorizontalMovement(x, y);
-
-                                if (isHorizontal != isDragHorizontal) {
-                                    isDragHorizontal = isHorizontal;
-                                    periodChangedListener.onDragDirectionChanged(isDragHorizontal);
-                                }
-                            }
-
-                            if (dx != 0) {
-                                ChartNavigationView.this.invalidate();
-                            }
-                        } else {
-                            isDragHorizontal = false;
-
-                            if (periodChangedListener != null) {
-                                periodChangedListener.onDragDirectionChanged(isDragHorizontal);
-                            }
-
-                            return false;
-                        }
-
-                        return true;
-                    }
-
-                    private boolean isHorizontalMovement(float updatedX, float updatedY) {
-                        if (initialX == updatedX) return false;
-
-                        double tg = (updatedY - initialY) / (updatedX - initialX);
-
-                        return Math.abs(tg) < 1;
-                    }
-                }
-        );
-
+        setOnTouchListener(chartNavigationTouchListener);
     }
 
     private boolean initialValueIsSent = false;
@@ -283,10 +142,6 @@ class ChartNavigationView extends View {
     private Paint duff = new Paint();
     private Paint chartPaintActive = new Paint();
 
-    float firstPassiveStartPixel = 0;
-    float frameStart = 200;
-    float frameWidth = 300;
-
     private int activeBackgroundColor = Color.WHITE;
     private int activeBackgroundColorNightMode = Color.rgb(29, 39, 51);
     private int frameColor = Color.rgb(219, 231, 240);
@@ -300,7 +155,7 @@ class ChartNavigationView extends View {
     private float[] chartPoints;
 
     private void initVariableForDrawing() {
-        activeBackgroundPaint.setColor(activeBackgroundColor); //todo: not only white, but also gray
+        activeBackgroundPaint.setColor(activeBackgroundColor);
         activeBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
         framePaint.setColor(frameColor);
@@ -437,9 +292,6 @@ class ChartNavigationView extends View {
         lineAlpha = new int[chart.getLineIds().size()];
         Arrays.fill(lineAlpha, 0xff);
 
-//        this.periodStartDateIndex = 20;
-//        this.periodEndDateIndex = 50;
-
         linesCount = chart.getLineIds().size();
         chartPoints = new float[4 * chart.getAbscissa().size()];
 
@@ -484,7 +336,8 @@ class ChartNavigationView extends View {
     }
 
     public void setPeriodChangedListener(PeriodChangedListener listener) {
-        this.periodChangedListener = listener;
+        periodChangedListener = listener;
+        chartNavigationTouchListener.setPeriodChangedListener(listener);
     }
 
     private int getMaxVisibleValue() {
@@ -497,16 +350,6 @@ class ChartNavigationView extends View {
         }
 
         return (visibleLines.isEmpty()) ? 0 : getMaxValue(visibleLines);
-    }
-
-    private int getMaxValue(List<List<Integer>> lists) {
-        int max = Integer.MIN_VALUE;
-
-        for (List<Integer> list : lists) {
-            max = Math.max(max, Collections.max(list));
-        }
-
-        return max;
     }
 
     public void setNightMode(boolean nightModeOn) {

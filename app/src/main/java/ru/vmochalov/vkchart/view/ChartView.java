@@ -20,6 +20,7 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.Chart;
+import ru.vmochalov.vkchart.view.listeners.PeriodChangedListener;
 
 import static android.util.TypedValue.COMPLEX_UNIT_SP;
 
@@ -94,7 +95,7 @@ public class ChartView extends LinearLayout {
         namesView = findViewById(R.id.chartNames);
 
         chartNavigationView.setPeriodChangedListener(
-                new ChartNavigationView.PeriodChangedListener() {
+                new PeriodChangedListener() {
                     @Override
                     public void onPeriodLengthChanged(double periodStart, double periodEnd, boolean startIsStable) {
                         detailedChartView.onVisibleRangeScaleChanged(periodStart, periodEnd, startIsStable);
