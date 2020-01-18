@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.dto;
+package ru.vmochalov.vkchart.chart;
 
 import org.json.JSONException;
 
@@ -12,8 +12,8 @@ import java.util.List;
  */
 public class Chart {
 
-    public static SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d");
-    public static SimpleDateFormat dateFormatExpanded = new SimpleDateFormat("E, MMM d");
+    private static SimpleDateFormat dateFormat = new SimpleDateFormat("MMM d");
+    private static SimpleDateFormat dateFormatExpanded = new SimpleDateFormat("E, MMM d");
 
     private String xId;
     private List<String> lineIds;
@@ -25,8 +25,8 @@ public class Chart {
     private List<String> labels;
     private List<Integer> colors;
 
-    public static Chart parse(String json) throws JSONException {
-        return new ChartParser().fromJson(json);
+    public static Chart fromJson(String json) throws JSONException {
+        return ChartParser.fromJson(json);
     }
 
     Chart(
@@ -50,7 +50,6 @@ public class Chart {
             abscissaAsString.add(dateFormat.format(date));
             abscissaAsLongString.add(dateFormatExpanded.format(date));
         }
-
     }
 
     public List<Date> getAbscissa() {

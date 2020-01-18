@@ -20,7 +20,7 @@ import java.util.Date;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
-import ru.vmochalov.vkchart.dto.Chart;
+import ru.vmochalov.vkchart.chart.Chart;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.

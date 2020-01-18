@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.dto;
+package ru.vmochalov.vkchart.chart;
 
 import android.graphics.Color;
 
@@ -15,7 +15,7 @@ import java.util.List;
 
 class ChartParser {
 
-    public Chart fromJson(String json) throws JSONException {
+    static Chart fromJson(String json) throws JSONException {
 
         String xId = null;
         List<String> lineIds = new ArrayList<>();
@@ -78,7 +78,7 @@ class ChartParser {
                         for (int j = 1; j < column.length(); j++) {
                             line.add(column.getInt(j));
                         }
-                        //todo: DO I need to check indexes of data???
+
                         ordinates.add(lineIds.indexOf(columnName), line);
                     }
                 }
@@ -86,6 +86,4 @@ class ChartParser {
         }
         return new Chart(xId, lineIds, abscissa, ordinates, labels, colors);
     }
-
-
 }

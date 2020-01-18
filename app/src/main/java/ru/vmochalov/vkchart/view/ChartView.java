@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
-import ru.vmochalov.vkchart.dto.Chart;
+import ru.vmochalov.vkchart.chart.Chart;
 
 import static android.util.TypedValue.COMPLEX_UNIT_SP;
 
@@ -275,7 +275,7 @@ public class ChartView extends LinearLayout {
 
     private Chart parseChartFromJson(String jsonSource) {
         try {
-            return Chart.parse(jsonSource);
+            return Chart.fromJson(jsonSource);
         } catch (JSONException ex) {
             //do nothing
         }

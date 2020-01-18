@@ -16,7 +16,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import ru.vmochalov.vkchart.dto.Chart;
+import ru.vmochalov.vkchart.chart.Chart;
 
 class ChartNavigationView extends View {
 
