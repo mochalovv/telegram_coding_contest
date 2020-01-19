@@ -268,4 +268,11 @@ class HorizontalLabelsDrawDelegate {
         return index >= FIRST_DATE_INDEX && index <= lastDateIndex;
     }
 
+    int getClosestPointIndex(float x) {
+        int result = Math.round((x - x0) / xStep);
+        if (result < FIRST_DATE_INDEX) result = FIRST_DATE_INDEX;
+        if (result > lastDateIndex) result = lastDateIndex;
+        return result;
+    }
+
 }

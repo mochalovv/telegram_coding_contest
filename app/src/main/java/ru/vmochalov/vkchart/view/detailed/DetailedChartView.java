@@ -7,28 +7,26 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.Chart;
+
+import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
  */
 public class DetailedChartView extends View {
 
-    private final int TOP_AXIS_PAINT_PX = 40;
-    private final int BOTTOM_AXIS_MARGIN_PX = TOP_AXIS_PAINT_PX + 20;
+    private final int TOP_AXIS_MARGIN_PX = 40;
+    private final int BOTTOM_AXIS_MARGIN_PX = TOP_AXIS_MARGIN_PX + 20;
 
     private float height;
     private float width;
@@ -36,6 +34,9 @@ public class DetailedChartView extends View {
     private Chart chart;
 
     private boolean[] linesVisibility;
+
+    private double startPercent;
+    private double endPercent;
 
     private int ANIMATION_DURATION = 500; //ms
     private int ALPHA_ANIMATION_DURATION = 300;
@@ -124,7 +125,7 @@ public class DetailedChartView extends View {
                 axisStrokeWidth,
                 axisTextSize,
                 BOTTOM_AXIS_MARGIN_PX,
-                TOP_AXIS_PAINT_PX
+                TOP_AXIS_MARGIN_PX
         );
 
         horizontalLabelsDrawDelegate = new HorizontalLabelsDrawDelegate(
@@ -139,33 +140,16 @@ public class DetailedChartView extends View {
                 }
         );
 
-        chartDrawDelegate = new ChartDrawDelegate(lineStrokeWidth, BOTTOM_AXIS_MARGIN_PX);
+        chartDrawDelegate = new ChartDrawDelegate(
+                lineStrokeWidth,
+                BOTTOM_AXIS_MARGIN_PX,
+                TOP_AXIS_MARGIN_PX
+        );
     }
-
-    private Paint selectedPointsPaint = new Paint();
-
-    private double startPercent;
-    private double endPercent;
-
-    private double visibleWidth;
-    private int firstDateIndex;
-    private int lastDateIndex;
-    private float xStep;
-    private float enlargedWidth;
-    private float x0;
-    private float yStep;
-    private List<Date> abscissa;
-
-    private int firstVisiblePointIndex;
-    private int lastVisiblePointIndex;
 
     private void initViewWideProperties() {
         startPercent = 0;
         endPercent = 1;
-
-        selectedPointsPaint.setStrokeWidth(lineStrokeWidth);
-        selectedPointsPaint.setStyle(Paint.Style.STROKE);
-        selectedPointsPaint.setAntiAlias(true);
 
         verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
         verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
@@ -201,7 +185,7 @@ public class DetailedChartView extends View {
                     initialX = event.getX();
                     initialY = event.getY();
 
-                    lastSelectedPointIndex = getNearestPointIndex(event.getX());
+                    lastSelectedPointIndex = horizontalLabelsDrawDelegate.getClosestPointIndex(event.getX());
 
                     collectVisibleSelectedValues(lastSelectedPointIndex);
 
@@ -217,7 +201,7 @@ public class DetailedChartView extends View {
                     }
 
                 } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                    lastSelectedPointIndex = getNearestPointIndex(event.getX());
+                    lastSelectedPointIndex = horizontalLabelsDrawDelegate.getClosestPointIndex(event.getX());
                     collectVisibleSelectedValues(lastSelectedPointIndex);
 
                     boolean isHorizontal = isHorizontalMovement(event.getX(), event.getY());
@@ -273,41 +257,33 @@ public class DetailedChartView extends View {
         return visibleSelectedValues;
     }
 
-    private int getNearestPointIndex(float x) {
-        int result = Math.round((x - x0) / xStep);
-        if (result < firstDateIndex) result = firstDateIndex;
-        if (result > lastDateIndex) result = lastDateIndex;
-        return result;
-    }
-
     private void initVariablesForHorizontalChartDrawing() {
-        visibleWidth = width * (endPercent - startPercent);
-        abscissa = chart.getAbscissa();
+        double visibleWidth = width * (endPercent - startPercent);
 
-        firstDateIndex = 0;
-        lastDateIndex = abscissa.size() - 1;
+        int firstDateIndex = 0;
+        int lastDateIndex = chart.getAbscissa().size() - 1;
 
-        xStep = width / lastDateIndex;
+        float xStep = width / lastDateIndex;
         xStep *= (width / visibleWidth);
 
-        enlargedWidth = (float) (width * width / visibleWidth);
+        float enlargedWidth = (float) (width * width / visibleWidth);
 
-        x0 = (float) (-enlargedWidth * startPercent);
+        float x0 = (float) (-enlargedWidth * startPercent);
 
-        firstVisiblePointIndex = (int) Math.floor(-x0 / xStep);
+        int firstVisiblePointIndex = (int) Math.floor(-x0 / xStep);
 
         if (firstVisiblePointIndex < firstDateIndex) {
             firstVisiblePointIndex = firstDateIndex;
         }
 
-        lastVisiblePointIndex = (int) Math.ceil((width - x0) / xStep);
+        int lastVisiblePointIndex = (int) Math.ceil((width - x0) / xStep);
 
         if (lastVisiblePointIndex > lastDateIndex) {
             lastVisiblePointIndex = lastDateIndex;
         }
 
         horizontalLabelsDrawDelegate.onDrawingParamsChanged(lastDateIndex, x0, xStep, firstVisiblePointIndex, lastVisiblePointIndex);
-        chartDrawDelegate.onDrawingParamsChanged(x0, firstVisiblePointIndex, xStep, yStep, lastVisiblePointIndex);
+        chartDrawDelegate.onDrawingParamsChanged(x0, firstVisiblePointIndex, xStep, lastVisiblePointIndex);
     }
 
     private float axisAnimationFraction;
@@ -322,10 +298,6 @@ public class DetailedChartView extends View {
 
         axisAnimationDirectionAppearFromBottom = maxVisibleValueDecreased;
         verticalAxisValueAnimator.start();
-    }
-
-    private void updateVerticalLinesDrawingParams(int maxVisibleValue) {
-        yStep = (height - BOTTOM_AXIS_MARGIN_PX - TOP_AXIS_PAINT_PX) / maxVisibleValue;
     }
 
     private boolean maxVisibleValueChangedOnStart;
@@ -345,7 +317,7 @@ public class DetailedChartView extends View {
             maxVisibleValueChangedOnStart = true;
 
             verticalAxisDrawDelegate.onLinesVisibilityUpdated(areLinesVisible(), newMaxVisibleValue);
-            updateVerticalLinesDrawingParams(newMaxVisibleValue);
+            chartDrawDelegate.onMaxVisibleValueChanged(newMaxVisibleValue);
         } else {
 
             verticalAxisDrawDelegate.onLinesVisibilityUpdated(areLinesVisible(), newMaxVisibleValue);
@@ -359,9 +331,7 @@ public class DetailedChartView extends View {
             maxVisibleValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                 @Override
                 public void onAnimationUpdate(ValueAnimator animation) {
-                    int value = (int) animation.getAnimatedValue();
-
-                    updateVerticalLinesDrawingParams(value);
+                    chartDrawDelegate.onMaxVisibleValueChanged((int) animation.getAnimatedValue());
 
                     DetailedChartView.this.invalidate();
                 }
@@ -432,53 +402,29 @@ public class DetailedChartView extends View {
 
         backgroundDrawDelegate.drawBackground(canvas);
 
-        verticalAxisDrawDelegate.drawVerticalAxis(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom);
+        verticalAxisDrawDelegate.drawVerticalAxis(
+                canvas,
+                axisAnimationFraction,
+                axisAnimationDirectionAppearFromBottom
+        );
 
         chartDrawDelegate.drawChart(canvas);
 
-        drawSelectedPoints(canvas);
-        verticalAxisDrawDelegate.drawVerticalLabels(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom);
-        horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
-    }
-
-    private void drawSelectedPoints(Canvas canvas) {
-        if (lastSelectedPointIndex < 0) return;
-
-        int pointValue;
-
-        float nextX = x0 + xStep * lastSelectedPointIndex;
-        float nextY;
-        int tempColor;
-
-        canvas.drawLine(
-                nextX,
-                0,
-                nextX,
-                height - BOTTOM_AXIS_MARGIN_PX,
-                verticalAxisDrawDelegate.getVerticalAxisPaint()
+        chartDrawDelegate.drawSelectedPoints(
+                canvas,
+                verticalAxisDrawDelegate.getVerticalAxisPaint(),
+                backgroundDrawDelegate.backgroundPaint,
+                lastSelectedPointIndex,
+                linesVisibility
         );
 
-        for (int i = 0; i < chart.getLineIds().size(); i++) {
-            if (linesVisibility[i]) {
+        verticalAxisDrawDelegate.drawVerticalLabels(
+                canvas,
+                axisAnimationFraction,
+                axisAnimationDirectionAppearFromBottom
+        );
 
-                tempColor = chart.getColors().get(i);
-
-                int color = Color.argb(
-                        chartDrawDelegate.getLineAlpha(i),
-                        Color.red(tempColor),
-                        Color.green(tempColor),
-                        Color.blue(tempColor)
-                );
-
-                selectedPointsPaint.setColor(color);
-
-                pointValue = chart.getOrdinates().get(i).get(lastSelectedPointIndex);
-                nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
-
-                canvas.drawCircle(nextX, nextY, 10, backgroundDrawDelegate.backgroundPaint);
-                canvas.drawCircle(nextX, nextY, 10, selectedPointsPaint);
-            }
-        }
+        horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
     }
 
     private boolean areLinesVisible() {
@@ -557,9 +503,8 @@ public class DetailedChartView extends View {
         }
     }
 
-    private List<List<Integer>> visiblePointValues = new ArrayList<>();
-
     private int getMaxVisibleValue() {
+        List<List<Integer>> visiblePointValues = new ArrayList<>();
 
         int absSize = chart.getAbscissa().size();
 
@@ -579,16 +524,6 @@ public class DetailedChartView extends View {
         }
 
         return (visiblePointValues.isEmpty()) ? 0 : getMaxValue(visiblePointValues);
-    }
-
-    private int getMaxValue(List<List<Integer>> lists) {
-        int max = Integer.MIN_VALUE;
-
-        for (List<Integer> list : lists) {
-            max = Math.max(max, Collections.max(list));
-        }
-
-        return max;
     }
 
     public void setNightMode(boolean nightModeOn) {

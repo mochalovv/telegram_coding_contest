@@ -14,7 +14,7 @@ class ChartDrawDelegate {
 
     private int linesCount;
 
-    private int[] linesAlphas; // 0 - 255
+    private int[] linesAlphas;
 
     private List<Integer> colors;
     private List<List<Integer>> chartOrdinates;
@@ -29,14 +29,23 @@ class ChartDrawDelegate {
     private float height;
 
     private float bottomMarginAxisPx;
+    private float topMarginAxisPx;
 
     private Paint chartPaint = new Paint();
+    private Paint selectedPointsPaint = new Paint();
 
-    ChartDrawDelegate(float lineStrokeWidth, float bottomMarginAxisPx) {
+
+    ChartDrawDelegate(float lineStrokeWidth, float bottomMarginAxisPx, float topMarginAxisPx) {
         chartPaint.setStrokeWidth(lineStrokeWidth);
         chartPaint.setStyle(Paint.Style.STROKE);
         chartPaint.setAntiAlias(true);
+
+        selectedPointsPaint.setStrokeWidth(lineStrokeWidth);
+        selectedPointsPaint.setStyle(Paint.Style.STROKE);
+        selectedPointsPaint.setAntiAlias(true);
+
         this.bottomMarginAxisPx = bottomMarginAxisPx;
+        this.topMarginAxisPx = topMarginAxisPx;
     }
 
     void onChartInited(int linesCount, List<Integer> colors, List<List<Integer>> chartOrdinates) {
@@ -58,18 +67,17 @@ class ChartDrawDelegate {
         linesAlphas[lineIndex] = alpha;
     }
 
-    int getLineAlpha(int lineIndex) {
-        return linesAlphas[lineIndex];
-    }
-
-    void onDrawingParamsChanged(float x0, int firstVisiblePointIndex, float xStep, float yStep, int lastVisiblePointIndex) {
+    void onDrawingParamsChanged(float x0, int firstVisiblePointIndex, float xStep, int lastVisiblePointIndex) {
         this.x0 = x0;
         this.firstVisiblePointIndex = firstVisiblePointIndex;
         this.xStep = xStep;
-        this.yStep = yStep;
         this.lastVisiblePointIndex = lastVisiblePointIndex;
 
         chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
+    }
+
+    void onMaxVisibleValueChanged(int maxVisibleValue) {
+        yStep = (height - bottomMarginAxisPx - topMarginAxisPx) / maxVisibleValue;
     }
 
     void drawChart(Canvas canvas) {
@@ -129,6 +137,52 @@ class ChartDrawDelegate {
             chartPoints[chartPointsIndex++] = nextY;
 
             canvas.drawLines(chartPoints, chartPaint);
+        }
+    }
+
+    void drawSelectedPoints(
+            Canvas canvas,
+            Paint verticalAxisPaint,
+            Paint backgroundPaint,
+            int lastSelectedPointIndex,
+            boolean[] linesVisibility
+    ) {
+        if (lastSelectedPointIndex < 0) return;
+
+        int pointValue;
+
+        float nextX = x0 + xStep * lastSelectedPointIndex;
+        float nextY;
+        int tempColor;
+
+        canvas.drawLine(
+                nextX,
+                0,
+                nextX,
+                height - bottomMarginAxisPx,
+                verticalAxisPaint
+        );
+
+        for (int i = 0; i < linesCount; i++) {
+            if (linesVisibility[i]) {
+
+                tempColor = colors.get(i);
+
+                int color = Color.argb(
+                        linesAlphas[i],
+                        Color.red(tempColor),
+                        Color.green(tempColor),
+                        Color.blue(tempColor)
+                );
+
+                selectedPointsPaint.setColor(color);
+
+                pointValue = chartOrdinates.get(i).get(lastSelectedPointIndex);
+                nextY = height - bottomMarginAxisPx - pointValue * yStep;
+
+                canvas.drawCircle(nextX, nextY, 10, backgroundPaint);
+                canvas.drawCircle(nextX, nextY, 10, selectedPointsPaint);
+            }
         }
     }
 }
