@@ -26,4 +26,14 @@ public class CalculationUtil {
         return max;
     }
 
+    public static int getPowOfTwo(int pow) {
+        int result = 1;
+
+        for (int i = 0; i < pow; i++) {
+            result *= 2;
+        }
+
+        return result;
+    }
+
 }
