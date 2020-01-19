@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view;
+package ru.vmochalov.vkchart.view.navigation;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -15,8 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import ru.vmochalov.vkchart.chart.Chart;
-import ru.vmochalov.vkchart.view.listeners.ChartNavigationTouchListener;
-import ru.vmochalov.vkchart.view.listeners.PeriodChangedListener;
 
 import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 
@@ -24,6 +22,7 @@ public class ChartNavigationView extends View {
 
     private static final float INITIAL_FRAME_START_POSITION_PX = 0;
     private static final float INITIAL_FRAME_WIDTH_PX = 300;
+
     private float width;
     private float height;
 

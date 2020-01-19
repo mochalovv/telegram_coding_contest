@@ -1,9 +1,7 @@
-package ru.vmochalov.vkchart.view.listeners;
+package ru.vmochalov.vkchart.view.navigation;
 
 import android.view.MotionEvent;
 import android.view.View;
-
-import ru.vmochalov.vkchart.view.ChartNavigationView;
 
 import static ru.vmochalov.vkchart.utils.CalculationUtil.isHorizontalMovement;
 

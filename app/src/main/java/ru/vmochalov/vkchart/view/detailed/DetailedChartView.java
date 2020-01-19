@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view;
+package ru.vmochalov.vkchart.view.detailed;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -25,7 +25,11 @@ import ru.vmochalov.vkchart.chart.Chart;
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
  */
-class DetailedChartView extends View {
+public class DetailedChartView extends View {
+
+    private final int TOP_AXIS_PAINT_PX = 40;
+    private final int BOTTOM_AXIS_MARGIN_PX = TOP_AXIS_PAINT_PX + 20;
+    private final int AXES_TEXT_SIZE_PX = 20;
 
     private float height;
     private float width;
@@ -49,6 +53,8 @@ class DetailedChartView extends View {
 
     private OnChartClickedListener onChartClickedListener;
 
+    private BackgroundDrawDelegate backgroundDrawDelegate;
+    private VerticalAxisDrawDelegate verticalAxisDrawDelegate;
 
     public interface OnChartClickedListener {
         void onTouch(float x, int pointIndex, List<Integer> values);
@@ -63,32 +69,28 @@ class DetailedChartView extends View {
     public DetailedChartView(Context context) {
         super(context);
 
-        initViewWideProperties();
-        initTouchListener();
+        init();
     }
 
     public DetailedChartView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
 
         handleAttributeSet(attributeSet);
-        initViewWideProperties();
-        initTouchListener();
+        init();
     }
 
     public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
         super(context, attributeSet, defStyleAttr);
 
         handleAttributeSet(attributeSet);
-        initViewWideProperties();
-        initTouchListener();
+        init();
     }
 
     public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
         super(context, attributeSet, defStyleAttr, defStyleRes);
 
         handleAttributeSet(attributeSet);
-        initViewWideProperties();
-        initTouchListener();
+        init();
     }
 
     private void handleAttributeSet(AttributeSet attributeSet) {
@@ -113,21 +115,27 @@ class DetailedChartView extends View {
         attributes.recycle();
     }
 
+    private void init() {
+        initViewWideProperties();
+        initTouchListener();
+        initDelegates();
+    }
+
+    private void initDelegates() {
+        backgroundDrawDelegate = new BackgroundDrawDelegate(getResources());
+        verticalAxisDrawDelegate = new VerticalAxisDrawDelegate(
+                getResources(),
+                axisStrokeWidth,
+                axisTextSize,
+                BOTTOM_AXIS_MARGIN_PX,
+                TOP_AXIS_PAINT_PX
+        );
+    }
+
     private Paint chartPaint = new Paint();
-    private Paint backgroundPaint = new Paint();
     private Paint debugPaint = new Paint();
     private Paint labelPaint = new Paint();
     private Paint labelPaintAnimation = new Paint();
-    private Paint verticalAxisPaint = new Paint();
-    private Paint verticalAxisPaintAnimation = new Paint();
-    private Paint verticalLabelsPaint = new Paint();
-    private Paint verticalLabelsPaintAnimation = new Paint();
-
-    private int bottomAxisMargin = 40 + 20;
-    private int topAxisMargin = 40;
-    private int levelsCount = 6;
-    private int axesTextSize = 20;
-    private int axesTextMargin = 12;
 
     private double startPercent;
     private double endPercent;
@@ -141,11 +149,6 @@ class DetailedChartView extends View {
     private float yStep;
     private List<Date> abscissa;
 
-    private String[] verticalLevelValuesAsStrings = new String[levelsCount];
-    private String[] oldVerticalLevelValuesAsStrings = new String[levelsCount];
-
-    private float[] verticalAxesLinesCoords = new float[levelsCount * 4];
-
     private int linesCount;
 
     private int firstVisiblePointIndex;
@@ -153,13 +156,7 @@ class DetailedChartView extends View {
 
     private float horizontalLabelY;
 
-    //drawing level lines
-    float yDelta;
-
     private void initViewWideProperties() {
-        backgroundPaint.setColor(getResources().getColor(R.color.lightThemeChartBackground));
-        backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-
         labelPaint.setTextAlign(Paint.Align.CENTER);
         labelPaint.setColor(getResources().getColor(R.color.lightThemeLabelText));
         labelPaint.setTextSize(axisTextSize);
@@ -184,28 +181,6 @@ class DetailedChartView extends View {
         debugPaint.setStyle(Paint.Style.FILL_AND_STROKE);
         debugPaint.setColor(Color.LTGRAY);
 
-        verticalAxisPaint.setColor(getResources().getColor(R.color.lightThemeAxis));
-        verticalAxisPaint.setStrokeWidth(axisStrokeWidth);
-        verticalAxisPaint.setAntiAlias(true);
-        verticalAxisPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        verticalAxisPaintAnimation.setStrokeWidth(axisStrokeWidth);
-        verticalAxisPaintAnimation.setAntiAlias(true);
-        verticalAxisPaintAnimation.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        verticalLabelsPaint.setColor(getResources().getColor(R.color.lightThemeLabelText));
-        verticalLabelsPaint.setTextSize(axisTextSize);
-        verticalLabelsPaint.setStrokeWidth(axisStrokeWidth);
-        verticalLabelsPaint.setTextAlign(Paint.Align.LEFT);
-        verticalLabelsPaint.setAntiAlias(true);
-        verticalLabelsPaint.setStyle(Paint.Style.FILL);
-
-        verticalLabelsPaintAnimation.setTextSize(axisTextSize);
-        verticalLabelsPaintAnimation.setStrokeWidth(axisStrokeWidth);
-        verticalLabelsPaintAnimation.setTextAlign(Paint.Align.LEFT);
-        verticalLabelsPaintAnimation.setAntiAlias(true);
-        verticalLabelsPaintAnimation.setStyle(Paint.Style.FILL);
-
         verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
         verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
         verticalAxisValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -215,7 +190,6 @@ class DetailedChartView extends View {
                 invalidate();
             }
         });
-
     }
 
     private void initVariablesForChartDrawing() {
@@ -349,23 +323,6 @@ class DetailedChartView extends View {
         chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
     }
 
-    private void updateVerticalLabelsDrawingParams(int newMaxVisibleValue) {
-        int verticalLevelDelta = (newMaxVisibleValue / levelsCount);
-
-        if (!areLinesVisible() || verticalLevelDelta == 0)
-            verticalLevelDelta = 1; // in case user is confused
-
-        if (oldVerticalLevelValuesAsStrings[0] == null) {
-            for (int i = 0; i < levelsCount; i++) {
-                oldVerticalLevelValuesAsStrings[i] = Integer.toString(verticalLevelDelta * i);
-            }
-        }
-        //calculationg background levels
-        for (int i = 0; i < levelsCount; i++) {
-            verticalLevelValuesAsStrings[i] = Integer.toString(verticalLevelDelta * i);
-        }
-    }
-
     private float axisAnimationFraction;
     private boolean axisAnimationDirectionAppearFromBottom;
 
@@ -381,7 +338,7 @@ class DetailedChartView extends View {
     }
 
     private void updateVerticalLinesDrawingParams(int maxVisibleValue) {
-        yStep = (height - bottomAxisMargin - topAxisMargin) / maxVisibleValue;
+        yStep = (height - BOTTOM_AXIS_MARGIN_PX - TOP_AXIS_PAINT_PX) / maxVisibleValue;
     }
 
     private boolean maxVisibleValueChangedOnStart;
@@ -400,11 +357,11 @@ class DetailedChartView extends View {
         if (!maxVisibleValueChangedOnStart) {
             maxVisibleValueChangedOnStart = true;
 
-            updateVerticalLabelsDrawingParams(newMaxVisibleValue);
+            verticalAxisDrawDelegate.onLinesVisibilityUpdated(areLinesVisible(), newMaxVisibleValue);
             updateVerticalLinesDrawingParams(newMaxVisibleValue);
         } else {
 
-            updateVerticalLabelsDrawingParams(newMaxVisibleValue);
+            verticalAxisDrawDelegate.onLinesVisibilityUpdated(areLinesVisible(), newMaxVisibleValue);
 
             if (maxVisibleValueAnimator != null) {
                 maxVisibleValueAnimator.pause();
@@ -426,7 +383,7 @@ class DetailedChartView extends View {
                 @Override
                 public void onAnimationEnd(Animator animation) {
                     super.onAnimationEnd(animation);
-                    oldVerticalLevelValuesAsStrings = verticalLevelValuesAsStrings.clone();
+                    verticalAxisDrawDelegate.onMaxVisibleValueAnimationEnd();
                 }
             });
 
@@ -454,6 +411,9 @@ class DetailedChartView extends View {
         height = bottom - top;
         width = right - left;
 
+        backgroundDrawDelegate.setCanvasSize(width, height);
+        verticalAxisDrawDelegate.setCanvasSize(width, height);
+
         onHeightChanged(height);
 
         onChartAndHeightReady();
@@ -461,8 +421,9 @@ class DetailedChartView extends View {
     }
 
     private void onHeightChanged(float height) {
-        horizontalLabelY = height - axesTextSize / 2;
-        yDelta = (height - bottomAxisMargin - topAxisMargin) / levelsCount;
+        horizontalLabelY = height - AXES_TEXT_SIZE_PX / 2;
+
+        verticalAxisDrawDelegate.onHeightChanged(height);
     }
 
     private void onChartAndHeightReady() {
@@ -482,19 +443,15 @@ class DetailedChartView extends View {
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        drawBackground(canvas);
-        drawVerticalAxis(canvas);
+        backgroundDrawDelegate.drawBackground(canvas);
+
+        verticalAxisDrawDelegate.drawVerticalAxis(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom);
 
         drawChart(canvas);
 
         drawSelectedPoints(canvas);
-        drawVerticalLabels(canvas);
+        verticalAxisDrawDelegate.drawVerticalLabels(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom);
         drawHorizontalLabels(canvas);
-    }
-
-
-    private void drawBackground(Canvas canvas) {
-        canvas.drawRect(0, 0, width, height, backgroundPaint);
     }
 
     private void drawSelectedPoints(Canvas canvas) {
@@ -506,8 +463,8 @@ class DetailedChartView extends View {
                 nextX,
                 0,
                 nextX,
-                height - bottomAxisMargin,
-                verticalAxisPaint
+                height - BOTTOM_AXIS_MARGIN_PX,
+                verticalAxisDrawDelegate.getVerticalAxisPaint()
         );
 
         for (int i = 0; i < linesCount; i++) {
@@ -525,122 +482,12 @@ class DetailedChartView extends View {
                 chartPaint.setColor(color);
 
                 pointValue = chart.getOrdinates().get(i).get(lastSelectedPointIndex);
-                nextY = height - bottomAxisMargin - pointValue * yStep;
+                nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
 
-                canvas.drawCircle(nextX, nextY, 10, backgroundPaint);
+                canvas.drawCircle(nextX, nextY, 10, backgroundDrawDelegate.backgroundPaint);
                 canvas.drawCircle(nextX, nextY, 10, chartPaint);
             }
         }
-    }
-
-    //to use inside the method only
-    private float verticalYAxisCoord;
-
-    private void drawVerticalAxis(Canvas canvas) {
-        boolean isAnimationHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
-
-        if (isAnimationHappening) {
-            drawVerticalAxis(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom, true); // верно для новых уровней. нужно написать для старых
-            drawVerticalAxis(canvas, axisAnimationFraction, !axisAnimationDirectionAppearFromBottom, false);
-        } else {
-
-            for (int i = 0; i < levelsCount; i++) {
-                verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;
-                verticalAxesLinesCoords[4 * i] = 0;
-                verticalAxesLinesCoords[4 * i + 1] = verticalYAxisCoord;
-                verticalAxesLinesCoords[4 * i + 2] = width;
-                verticalAxesLinesCoords[4 * i + 3] = verticalYAxisCoord;
-            }
-
-            canvas.drawLines(verticalAxesLinesCoords, verticalAxisPaint);
-        }
-    }
-
-    private float[] firstVerticalLIneAnimationCoords = new float[4];
-
-    private void drawVerticalAxis(Canvas canvas, float fraction, boolean appearFromBottom, boolean appearing) {
-
-        int alpha = appearing ? Math.min((int) (0xff * ((1 - fraction) * (1 - fraction))), 0xff) : Math.min((int) (0xff * (fraction * fraction)), 0xff);
-
-        int color = Color.argb(alpha,
-                Color.red(verticalAxisPaint.getColor()),
-                Color.green(verticalAxisPaint.getColor()),
-                Color.blue(verticalAxisPaint.getColor())
-        );
-
-        verticalAxisPaintAnimation.setColor(color);
-
-        float animationFraction = appearing ? (1 - fraction) : fraction;
-
-        // do not animate last line
-        verticalYAxisCoord = height - bottomAxisMargin;
-
-        firstVerticalLIneAnimationCoords[0] = 0;
-        firstVerticalLIneAnimationCoords[1] = verticalYAxisCoord;
-        firstVerticalLIneAnimationCoords[2] = width;
-        firstVerticalLIneAnimationCoords[3] = verticalYAxisCoord;
-
-        for (int i = 1; i < levelsCount; i++) {
-            if (appearFromBottom) {
-                verticalYAxisCoord = height - bottomAxisMargin - (i - 1) * yDelta - yDelta * animationFraction;
-            } else {
-                verticalYAxisCoord = height - bottomAxisMargin - (levelsCount) * yDelta + (i - 1) * yDelta + yDelta * animationFraction;
-            }
-            verticalAxesLinesCoords[4 * i] = 0;
-            verticalAxesLinesCoords[4 * i + 1] = verticalYAxisCoord;
-            verticalAxesLinesCoords[4 * i + 2] = width;
-            verticalAxesLinesCoords[4 * i + 3] = verticalYAxisCoord;
-        }
-
-        canvas.drawLines(verticalAxesLinesCoords, verticalAxisPaintAnimation);
-        canvas.drawLines(firstVerticalLIneAnimationCoords, verticalAxisPaint);
-    }
-
-
-    private void drawVerticalLabels(Canvas canvas) {
-        boolean animationIsHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
-
-        if (animationIsHappening) {
-            drawVerticalLabels(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom, true);
-            drawVerticalLabels(canvas, axisAnimationFraction, !axisAnimationDirectionAppearFromBottom, false);
-
-        } else {
-            for (int i = 0; i < levelsCount; i++) {
-                verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;
-                canvas.drawText(oldVerticalLevelValuesAsStrings[i], 0, verticalYAxisCoord - axesTextMargin, verticalLabelsPaint);
-            }
-        }
-    }
-
-    private float verticalYAxisCoordAnimation;
-
-    private void drawVerticalLabels(Canvas canvas, float fraction, boolean appearFromBottom, boolean appearing) {
-        int alpha = appearing ? Math.min((int) (0xff * ((1 - fraction) * (1 - fraction))), 0xff) : Math.min((int) (0xff * (fraction * fraction)), 0xff);
-
-        int color = Color.argb(alpha,
-                Color.red(verticalLabelsPaint.getColor()),
-                Color.green(verticalLabelsPaint.getColor()),
-                Color.blue(verticalLabelsPaint.getColor())
-        );
-
-        verticalLabelsPaintAnimation.setColor(color);
-
-        float animationFraction = appearing ? (1 - fraction) : fraction;
-
-        String[] labelsToUse = appearing ? verticalLevelValuesAsStrings : oldVerticalLevelValuesAsStrings;
-
-        for (int i = 1; i < levelsCount; i++) {
-            if (appearFromBottom) {
-                verticalYAxisCoordAnimation = height - bottomAxisMargin - (i - 1) * yDelta - yDelta * animationFraction;
-                canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
-            } else {
-                verticalYAxisCoordAnimation = height - bottomAxisMargin - (levelsCount) * yDelta + (levelsCount - i - 1) * yDelta + yDelta * animationFraction;
-                canvas.drawText(labelsToUse[i], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaintAnimation);
-            }
-        }
-
-        verticalYAxisCoordAnimation = height - bottomAxisMargin;
-        canvas.drawText(labelsToUse[0], 0, verticalYAxisCoordAnimation - axesTextMargin, verticalLabelsPaint);
     }
 
     private boolean areLinesVisible() {
@@ -894,12 +741,12 @@ class DetailedChartView extends View {
 
             previousX = x0 + firstVisiblePointIndex * xStep;
             pointValue = chartOrdinate.get(firstVisiblePointIndex);
-            previousY = height - bottomAxisMargin - pointValue * yStep;
+            previousY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
 
             for (int j = firstVisiblePointIndex + 1; j < lastVisiblePointIndex; j++) {
                 nextX = x0 + j * xStep;
                 pointValue = chartOrdinate.get(j);
-                nextY = height - bottomAxisMargin - pointValue * yStep;
+                nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
 
                 chartPoints[chartPointsIndex++] = previousX;
                 chartPoints[chartPointsIndex++] = previousY;
@@ -912,7 +759,7 @@ class DetailedChartView extends View {
 
             nextX = x0 + lastVisiblePointIndex * xStep;
             pointValue = chartOrdinate.get(lastVisiblePointIndex);
-            nextY = height - bottomAxisMargin - pointValue * yStep;
+            nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
 
             chartPoints[chartPointsIndex++] = previousX;
             chartPoints[chartPointsIndex++] = previousY;
@@ -1013,13 +860,12 @@ class DetailedChartView extends View {
     }
 
     public void setNightMode(boolean nightModeOn) {
-        int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
-        int verticalAxisColor = getResources().getColor(nightModeOn ? R.color.darkThemeAxis : R.color.lightThemeAxis);
         int labelsColor = getResources().getColor(nightModeOn ? R.color.darkThemeLabelText : R.color.lightThemeLabelText);
-        backgroundPaint.setColor(backgroundColor);
-        verticalAxisPaint.setColor(verticalAxisColor);
+
         labelPaint.setColor(labelsColor);
-        verticalLabelsPaint.setColor(labelsColor);
+
+        backgroundDrawDelegate.onNightModeChanged(nightModeOn);
+        verticalAxisDrawDelegate.onNightModeChanged(nightModeOn);
 
         invalidate();
     }

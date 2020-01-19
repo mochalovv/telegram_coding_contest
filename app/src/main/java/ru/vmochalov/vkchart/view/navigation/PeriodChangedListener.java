@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view.listeners;
+package ru.vmochalov.vkchart.view.navigation;
 
 /**
  * Created by Vladimir Mochalov on 18.01.2020.

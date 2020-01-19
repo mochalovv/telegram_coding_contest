@@ -20,7 +20,9 @@ import java.util.List;
 
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.Chart;
-import ru.vmochalov.vkchart.view.listeners.PeriodChangedListener;
+import ru.vmochalov.vkchart.view.detailed.DetailedChartView;
+import ru.vmochalov.vkchart.view.navigation.PeriodChangedListener;
+import ru.vmochalov.vkchart.view.navigation.ChartNavigationView;
 
 import static android.util.TypedValue.COMPLEX_UNIT_SP;
 

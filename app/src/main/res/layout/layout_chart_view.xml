@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <ru.vmochalov.vkchart.view.DetailedChartView
+        <ru.vmochalov.vkchart.view.detailed.DetailedChartView
             android:id="@+id/chart"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
@@ -49,7 +49,7 @@
 
     </FrameLayout>
 
-    <ru.vmochalov.vkchart.view.ChartNavigationView
+    <ru.vmochalov.vkchart.view.navigation.ChartNavigationView
         android:id="@+id/chartNavigation"
         android:layout_width="match_parent"
         android:layout_height="@dimen/chartNavigationViewHeight"
