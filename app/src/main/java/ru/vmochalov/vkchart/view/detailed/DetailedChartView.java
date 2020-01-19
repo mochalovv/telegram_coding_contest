@@ -36,7 +36,6 @@ public class DetailedChartView extends View {
     private Chart chart;
 
     private boolean[] linesVisibility;
-    private int[] linesAlphas; // 0 - 255
 
     private int ANIMATION_DURATION = 500; //ms
     private int ALPHA_ANIMATION_DURATION = 300;
@@ -51,6 +50,7 @@ public class DetailedChartView extends View {
     private BackgroundDrawDelegate backgroundDrawDelegate;
     private VerticalAxisDrawDelegate verticalAxisDrawDelegate;
     private HorizontalLabelsDrawDelegate horizontalLabelsDrawDelegate;
+    private ChartDrawDelegate chartDrawDelegate;
 
     public interface OnChartClickedListener {
         void onTouch(float x, int pointIndex, List<Integer> values);
@@ -138,10 +138,11 @@ public class DetailedChartView extends View {
                     }
                 }
         );
+
+        chartDrawDelegate = new ChartDrawDelegate(lineStrokeWidth, BOTTOM_AXIS_MARGIN_PX);
     }
 
-    private Paint chartPaint = new Paint();
-    private Paint debugPaint = new Paint();
+    private Paint selectedPointsPaint = new Paint();
 
     private double startPercent;
     private double endPercent;
@@ -155,8 +156,6 @@ public class DetailedChartView extends View {
     private float yStep;
     private List<Date> abscissa;
 
-    private int linesCount;
-
     private int firstVisiblePointIndex;
     private int lastVisiblePointIndex;
 
@@ -164,12 +163,9 @@ public class DetailedChartView extends View {
         startPercent = 0;
         endPercent = 1;
 
-        chartPaint.setStrokeWidth(lineStrokeWidth);
-        chartPaint.setStyle(Paint.Style.STROKE);
-        chartPaint.setAntiAlias(true);
-
-        debugPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-        debugPaint.setColor(Color.LTGRAY);
+        selectedPointsPaint.setStrokeWidth(lineStrokeWidth);
+        selectedPointsPaint.setStyle(Paint.Style.STROKE);
+        selectedPointsPaint.setAntiAlias(true);
 
         verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
         verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
@@ -310,9 +306,8 @@ public class DetailedChartView extends View {
             lastVisiblePointIndex = lastDateIndex;
         }
 
-        chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
-
         horizontalLabelsDrawDelegate.onDrawingParamsChanged(lastDateIndex, x0, xStep, firstVisiblePointIndex, lastVisiblePointIndex);
+        chartDrawDelegate.onDrawingParamsChanged(x0, firstVisiblePointIndex, xStep, yStep, lastVisiblePointIndex);
     }
 
     private float axisAnimationFraction;
@@ -415,6 +410,7 @@ public class DetailedChartView extends View {
     private void onHeightChanged(float height) {
         horizontalLabelsDrawDelegate.onHeightChanged(height);
         verticalAxisDrawDelegate.onHeightChanged(height);
+        chartDrawDelegate.onHeightChanged(height);
     }
 
     private void onChartAndHeightReady() {
@@ -438,7 +434,7 @@ public class DetailedChartView extends View {
 
         verticalAxisDrawDelegate.drawVerticalAxis(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom);
 
-        drawChart(canvas);
+        chartDrawDelegate.drawChart(canvas);
 
         drawSelectedPoints(canvas);
         verticalAxisDrawDelegate.drawVerticalLabels(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom);
@@ -448,7 +444,11 @@ public class DetailedChartView extends View {
     private void drawSelectedPoints(Canvas canvas) {
         if (lastSelectedPointIndex < 0) return;
 
-        nextX = x0 + xStep * lastSelectedPointIndex;
+        int pointValue;
+
+        float nextX = x0 + xStep * lastSelectedPointIndex;
+        float nextY;
+        int tempColor;
 
         canvas.drawLine(
                 nextX,
@@ -458,25 +458,25 @@ public class DetailedChartView extends View {
                 verticalAxisDrawDelegate.getVerticalAxisPaint()
         );
 
-        for (int i = 0; i < linesCount; i++) {
+        for (int i = 0; i < chart.getLineIds().size(); i++) {
             if (linesVisibility[i]) {
 
                 tempColor = chart.getColors().get(i);
 
                 int color = Color.argb(
-                        linesAlphas[i],
+                        chartDrawDelegate.getLineAlpha(i),
                         Color.red(tempColor),
                         Color.green(tempColor),
                         Color.blue(tempColor)
                 );
 
-                chartPaint.setColor(color);
+                selectedPointsPaint.setColor(color);
 
                 pointValue = chart.getOrdinates().get(i).get(lastSelectedPointIndex);
                 nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
 
                 canvas.drawCircle(nextX, nextY, 10, backgroundDrawDelegate.backgroundPaint);
-                canvas.drawCircle(nextX, nextY, 10, chartPaint);
+                canvas.drawCircle(nextX, nextY, 10, selectedPointsPaint);
             }
         }
     }
@@ -510,80 +510,14 @@ public class DetailedChartView extends View {
         invalidate();
     }
 
-    private float previousX;
-    private float previousY;
-    private float nextX;
-    private int pointValue;
-    private float nextY;
-    private float[] chartPoints;
-    private int chartPointsIndex;
-    private List<Integer> chartOrdinate;
-
-    private int tempColor;
-
-    private void drawChart(Canvas canvas) {
-        for (int i = 0; i < linesCount; i++) {
-            if (linesAlphas[i] == 0) {
-                continue; // skip muted charts
-            }
-
-            chartPointsIndex = 0;
-
-            tempColor = chart.getColors().get(i);
-
-            int color = Color.argb(
-                    linesAlphas[i],
-                    Color.red(tempColor),
-                    Color.green(tempColor),
-                    Color.blue(tempColor)
-            );
-
-            chartPaint.setColor(color);
-            chartOrdinate = chart.getOrdinates().get(i);
-
-            previousX = x0 + firstVisiblePointIndex * xStep;
-            pointValue = chartOrdinate.get(firstVisiblePointIndex);
-            previousY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
-
-            for (int j = firstVisiblePointIndex + 1; j < lastVisiblePointIndex; j++) {
-                nextX = x0 + j * xStep;
-                pointValue = chartOrdinate.get(j);
-                nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
-
-                chartPoints[chartPointsIndex++] = previousX;
-                chartPoints[chartPointsIndex++] = previousY;
-                chartPoints[chartPointsIndex++] = nextX;
-                chartPoints[chartPointsIndex++] = nextY;
-
-                previousX = nextX;
-                previousY = nextY;
-            }
-
-            nextX = x0 + lastVisiblePointIndex * xStep;
-            pointValue = chartOrdinate.get(lastVisiblePointIndex);
-            nextY = height - BOTTOM_AXIS_MARGIN_PX - pointValue * yStep;
-
-            chartPoints[chartPointsIndex++] = previousX;
-            chartPoints[chartPointsIndex++] = previousY;
-            chartPoints[chartPointsIndex++] = nextX;
-            chartPoints[chartPointsIndex++] = nextY;
-
-            canvas.drawLines(chartPoints, chartPaint);
-        }
-    }
-
     public void setChart(Chart chart) {
         this.chart = chart;
 
         this.linesVisibility = new boolean[chart.getLabels().size()];
         Arrays.fill(linesVisibility, true);
 
-        linesAlphas = new int[chart.getLabels().size()];
-        Arrays.fill(linesAlphas, 0xff);
-
-        linesCount = chart.getLineIds().size();
-
         horizontalLabelsDrawDelegate.onChartInited(chart.getAbscissaAsString());
+        chartDrawDelegate.onChartInited(chart.getLineIds().size(), chart.getColors(), chart.getOrdinates());
 
         onChartAndWidthReady();
         onChartAndHeightReady();
@@ -609,11 +543,8 @@ public class DetailedChartView extends View {
                 linesAlphaAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
                     public void onAnimationUpdate(ValueAnimator animation) {
-                        int value = (int) animation.getAnimatedValue();
-
-                        linesAlphas[lineIndex] = value;
+                        chartDrawDelegate.setLineAlpha(lineIndex, (int) animation.getAnimatedValue());
                         DetailedChartView.this.invalidate();
-
                     }
                 });
                 linesAlphaAnimator.start();
