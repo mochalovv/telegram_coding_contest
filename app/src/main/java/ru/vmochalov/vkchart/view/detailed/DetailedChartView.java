@@ -28,9 +28,6 @@ public class DetailedChartView extends View {
     private final int TOP_AXIS_MARGIN_PX = 40;
     private final int BOTTOM_AXIS_MARGIN_PX = TOP_AXIS_MARGIN_PX + 20;
 
-    private float height;
-    private float width;
-
     private Chart chart;
 
     private boolean[] linesVisibility;
@@ -152,11 +149,6 @@ public class DetailedChartView extends View {
         );
     }
 
-    private void initVariablesForChartDrawing() {
-        initVariablesForHorizontalChartDrawing();
-        initVariablesForVerticalChartDrawing();
-    }
-
     public void setOnChartClickedListener(OnChartClickedListener listener) {
         this.onChartClickedListener = listener;
     }
@@ -247,7 +239,7 @@ public class DetailedChartView extends View {
         return visibleSelectedValues;
     }
 
-    private void initVariablesForHorizontalChartDrawing() {
+    private void initVariablesForHorizontalChartDrawing(float width) {
         double visibleWidth = width * (endPercent - startPercent);
 
         int firstDateIndex = 0;
@@ -341,16 +333,16 @@ public class DetailedChartView extends View {
     public void onLayout(boolean changed, int left, int top, int right, int bottom) {
         super.onLayout(changed, left, top, right, bottom);
 
-        height = bottom - top;
-        width = right - left;
+        float height = bottom - top;
+        float width = right - left;
 
         backgroundDrawDelegate.setCanvasSize(width, height);
         verticalAxisDrawDelegate.setCanvasSize(width, height);
 
         onHeightChanged(height);
 
-        onChartAndHeightReady();
-        onChartAndWidthReady();
+        updateDrawingParams();
+        initVariablesForVerticalChartDrawing();
     }
 
     private void onHeightChanged(float height) {
@@ -359,16 +351,10 @@ public class DetailedChartView extends View {
         chartDrawDelegate.onHeightChanged(height);
     }
 
-    private void onChartAndHeightReady() {
-        if (height > 0 && chart != null) {
+    private void updateDrawingParams() {
+        if (chart != null && getWidth() > 0 && getHeight() > 0) {
             initVariablesForVerticalChartDrawing();
-        }
-    }
-
-    private void onChartAndWidthReady() {
-        if (width > 0 && chart != null) {
-            initVariablesForChartDrawing();
-            initVariablesForHorizontalChartDrawing();
+            initVariablesForHorizontalChartDrawing(getWidth());
             horizontalLabelsDrawDelegate.updatedHorizontalLabelsScale();
         }
     }
@@ -403,7 +389,7 @@ public class DetailedChartView extends View {
         startPercent = startVisiblePercent;
         endPercent = endVisiblePercent;
 
-        initVariablesForChartDrawing();
+        updateDrawingParams();
 
         invalidate();
     }
@@ -412,9 +398,7 @@ public class DetailedChartView extends View {
         startPercent = startVisiblePercent;
         endPercent = endVisiblePercent;
 
-        initVariablesForChartDrawing();
-
-        horizontalLabelsDrawDelegate.updatedHorizontalLabelsScale();
+        updateDrawingParams();
 
         invalidate();
     }
@@ -428,8 +412,7 @@ public class DetailedChartView extends View {
         horizontalLabelsDrawDelegate.onChartInited(chart.getAbscissaAsString());
         chartDrawDelegate.onChartInited(chart.getLineIds().size(), chart.getColors(), chart.getOrdinates());
 
-        onChartAndWidthReady();
-        onChartAndHeightReady();
+        updateDrawingParams();
 
         invalidate();
     }
