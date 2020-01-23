@@ -1,5 +1,6 @@
 package ru.vmochalov.vkchart.view.detailed;
 
+import android.animation.ValueAnimator;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -14,6 +15,11 @@ public class VerticalAxisDrawDelegate {
 
     private final int AXIS_TEXT_MARGIN_PX = 12;
     private final int AXIS_LEVELS_COUNT = 6;
+    private final int ANIMATION_DURATION = 500; //ms
+
+    interface Callback {
+        void onRedrawRequired();
+    }
 
     private Resources resources;
 
@@ -37,8 +43,19 @@ public class VerticalAxisDrawDelegate {
     private Paint verticalLabelsPaint = new Paint();
     private Paint verticalAnimatedLabelsPaint = new Paint();
 
+    private ValueAnimator verticalAxisValueAnimator;
+    private boolean axisAnimationDirectionAppearFromBottom;
+    private float axisAnimationFraction;
 
-    VerticalAxisDrawDelegate(Resources resources, float axisStrokeWidth, float axisTextSize, int bottomAxisMargin, int topAxisMargin) {
+
+    VerticalAxisDrawDelegate(
+            Resources resources,
+            float axisStrokeWidth,
+            float axisTextSize,
+            int bottomAxisMargin,
+            int topAxisMargin,
+            final Callback callback
+    ) {
         this.resources = resources;
 
         this.bottomAxisMargin = bottomAxisMargin;
@@ -65,6 +82,16 @@ public class VerticalAxisDrawDelegate {
         verticalAnimatedLabelsPaint.setTextAlign(Paint.Align.LEFT);
         verticalAnimatedLabelsPaint.setAntiAlias(true);
         verticalAnimatedLabelsPaint.setStyle(Paint.Style.FILL);
+
+        verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
+        verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
+        verticalAxisValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                axisAnimationFraction = (float) animation.getAnimatedValue();
+                callback.onRedrawRequired();
+            }
+        });
     }
 
     void setCanvasSize(float width, float height) {
@@ -76,7 +103,7 @@ public class VerticalAxisDrawDelegate {
         yDelta = (height - bottomAxisMargin - topAxisMargin) / AXIS_LEVELS_COUNT;
     }
 
-    void drawVerticalAxis(Canvas canvas, float axisAnimationFraction, boolean axisAnimationDirectionAppearFromBottom) {
+    void drawVerticalAxis(Canvas canvas) {
         boolean isAnimationHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
 
         if (isAnimationHappening) {
@@ -135,7 +162,7 @@ public class VerticalAxisDrawDelegate {
         canvas.drawLines(firstVerticalLineAnimationCoords, verticalAxisPaint);
     }
 
-    void drawVerticalLabels(Canvas canvas, float axisAnimationFraction, boolean axisAnimationDirectionAppearFromBottom) {
+    void drawVerticalLabels(Canvas canvas) {
         boolean animationIsHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
 
         if (animationIsHappening) {
@@ -213,4 +240,14 @@ public class VerticalAxisDrawDelegate {
     void onMaxVisibleValueAnimationEnd() {
         oldVerticalLevelValuesAsStrings = verticalLevelValuesAsStrings.clone();
     }
+
+    void animateVerticalAxis(boolean maxVisibleValueDecreased) {
+        if (verticalAxisValueAnimator != null) {
+            verticalAxisValueAnimator.pause();
+        }
+
+        axisAnimationDirectionAppearFromBottom = maxVisibleValueDecreased;
+        verticalAxisValueAnimator.start();
+    }
+
 }

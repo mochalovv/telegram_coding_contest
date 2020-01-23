@@ -35,8 +35,8 @@ public class DetailedChartView extends View {
 
     private boolean[] linesVisibility;
 
-    private double startPercent;
-    private double endPercent;
+    private double startPercent = 0;
+    private double endPercent = 1;
 
     private int ANIMATION_DURATION = 500; //ms
     private int ALPHA_ANIMATION_DURATION = 300;
@@ -113,7 +113,6 @@ public class DetailedChartView extends View {
     }
 
     private void init() {
-        initViewWideProperties();
         initTouchListener();
         initDelegates();
     }
@@ -125,7 +124,13 @@ public class DetailedChartView extends View {
                 axisStrokeWidth,
                 axisTextSize,
                 BOTTOM_AXIS_MARGIN_PX,
-                TOP_AXIS_MARGIN_PX
+                TOP_AXIS_MARGIN_PX,
+                new VerticalAxisDrawDelegate.Callback() {
+                    @Override
+                    public void onRedrawRequired() {
+                        invalidate();
+                    }
+                }
         );
 
         horizontalLabelsDrawDelegate = new HorizontalLabelsDrawDelegate(
@@ -145,21 +150,6 @@ public class DetailedChartView extends View {
                 BOTTOM_AXIS_MARGIN_PX,
                 TOP_AXIS_MARGIN_PX
         );
-    }
-
-    private void initViewWideProperties() {
-        startPercent = 0;
-        endPercent = 1;
-
-        verticalAxisValueAnimator = ValueAnimator.ofFloat(1.0f, 0.0f);
-        verticalAxisValueAnimator.setDuration(ANIMATION_DURATION);
-        verticalAxisValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                axisAnimationFraction = (float) animation.getAnimatedValue();
-                invalidate();
-            }
-        });
     }
 
     private void initVariablesForChartDrawing() {
@@ -286,20 +276,6 @@ public class DetailedChartView extends View {
         chartDrawDelegate.onDrawingParamsChanged(x0, firstVisiblePointIndex, xStep, lastVisiblePointIndex);
     }
 
-    private float axisAnimationFraction;
-    private boolean axisAnimationDirectionAppearFromBottom;
-
-    private ValueAnimator verticalAxisValueAnimator;
-
-    private void animateVerticalAxis(boolean maxVisibleValueDecreased) {
-        if (verticalAxisValueAnimator != null) {
-            verticalAxisValueAnimator.pause();
-        }
-
-        axisAnimationDirectionAppearFromBottom = maxVisibleValueDecreased;
-        verticalAxisValueAnimator.start();
-    }
-
     private boolean maxVisibleValueChangedOnStart;
 
     private ValueAnimator maxVisibleValueAnimator;
@@ -346,7 +322,7 @@ public class DetailedChartView extends View {
 
             maxVisibleValueAnimator.start();
 
-            animateVerticalAxis(newMaxVisibleValue < oldFixedMaxVisibleValue);
+            verticalAxisDrawDelegate.animateVerticalAxis(newMaxVisibleValue < oldFixedMaxVisibleValue);
         }
 
         oldFixedMaxVisibleValue = newMaxVisibleValue;
@@ -401,15 +377,8 @@ public class DetailedChartView extends View {
         super.onDraw(canvas);
 
         backgroundDrawDelegate.drawBackground(canvas);
-
-        verticalAxisDrawDelegate.drawVerticalAxis(
-                canvas,
-                axisAnimationFraction,
-                axisAnimationDirectionAppearFromBottom
-        );
-
+        verticalAxisDrawDelegate.drawVerticalAxis(canvas);
         chartDrawDelegate.drawChart(canvas);
-
         chartDrawDelegate.drawSelectedPoints(
                 canvas,
                 verticalAxisDrawDelegate.getVerticalAxisPaint(),
@@ -417,13 +386,7 @@ public class DetailedChartView extends View {
                 lastSelectedPointIndex,
                 linesVisibility
         );
-
-        verticalAxisDrawDelegate.drawVerticalLabels(
-                canvas,
-                axisAnimationFraction,
-                axisAnimationDirectionAppearFromBottom
-        );
-
+        verticalAxisDrawDelegate.drawVerticalLabels(canvas);
         horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
     }
 

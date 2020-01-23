@@ -207,7 +207,7 @@ class HorizontalLabelsDrawDelegate {
     }
 
     private int getInitialScale() {
-        // Find out, if two points overlap. If no, then this is the preffered scale.
+        // Find out, if two points overlap. If not, then this is the preffered scale.
         int scale = 0;
 
         int firstPointIndex = 0;

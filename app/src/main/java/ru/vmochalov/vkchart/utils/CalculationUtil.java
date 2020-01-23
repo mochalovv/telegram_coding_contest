@@ -30,7 +30,7 @@ public class CalculationUtil {
         int result = 1;
 
         for (int i = 0; i < pow; i++) {
-            result *= 2;
+            result = result << 1;
         }
 
         return result;
