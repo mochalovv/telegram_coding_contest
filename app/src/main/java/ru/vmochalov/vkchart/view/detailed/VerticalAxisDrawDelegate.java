@@ -15,11 +15,7 @@ public class VerticalAxisDrawDelegate {
 
     private final int AXIS_TEXT_MARGIN_PX = 12;
     private final int AXIS_LEVELS_COUNT = 6;
-    private final int ANIMATION_DURATION = 500; //ms
-
-    interface Callback {
-        void onRedrawRequired();
-    }
+    private final int ANIMATION_DURATION = 500;
 
     private Resources resources;
 
@@ -54,7 +50,7 @@ public class VerticalAxisDrawDelegate {
             float axisTextSize,
             int bottomAxisMargin,
             int topAxisMargin,
-            final Callback callback
+            final RedrawCallback callback
     ) {
         this.resources = resources;
 

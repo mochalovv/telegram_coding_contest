@@ -20,10 +20,6 @@ import static ru.vmochalov.vkchart.utils.CalculationUtil.getPowOfTwo;
  */
 class HorizontalLabelsDrawDelegate {
 
-    interface Callback {
-        void onRedrawRequired();
-    }
-
     private final int AXES_TEXT_SIZE_PX = 20;
     private final int FIRST_DATE_INDEX = 0;
     private final int LABELS_MAX_DISTANCE_LIMIT_PX = 200;
@@ -52,14 +48,14 @@ class HorizontalLabelsDrawDelegate {
 
     private ValueAnimator horizontalLabelsAnimator = null;
 
-    private Callback callback;
+    private RedrawCallback redrawCallback;
 
     private Paint labelPaint = new Paint();
     private Paint labelPaintAnimation = new Paint();
 
-    HorizontalLabelsDrawDelegate(Resources resources, float axisTextSize, float axisStrokeWidth, Callback callback) {
+    HorizontalLabelsDrawDelegate(Resources resources, float axisTextSize, float axisStrokeWidth, RedrawCallback redrawCallback) {
         this.resources = resources;
-        this.callback = callback;
+        this.redrawCallback = redrawCallback;
 
         labelPaint.setTextAlign(Paint.Align.CENTER);
         labelPaint.setColor(resources.getColor(R.color.lightThemeLabelText));
@@ -169,7 +165,7 @@ class HorizontalLabelsDrawDelegate {
             public void onAnimationUpdate(ValueAnimator animation) {
                 horizontalLabelsAlpha = (float) animation.getAnimatedValue();
 
-                callback.onRedrawRequired();
+                redrawCallback.onRedrawRequired();
             }
         });
         horizontalLabelsAnimator.addListener(new AnimatorListenerAdapter() {

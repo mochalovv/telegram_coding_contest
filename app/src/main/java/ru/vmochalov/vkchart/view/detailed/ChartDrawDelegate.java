@@ -1,5 +1,6 @@
 package ru.vmochalov.vkchart.view.detailed;
 
+import android.animation.ValueAnimator;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -11,10 +12,12 @@ import java.util.List;
  * Created by Vladimir Mochalov on 19.01.2020.
  */
 class ChartDrawDelegate {
+    private final int ALPHA_ANIMATION_DURATION = 300;
 
     private int linesCount;
 
     private int[] linesAlphas;
+    private boolean[] lineVisibilities;
 
     private List<Integer> colors;
     private List<List<Integer>> chartOrdinates;
@@ -34,8 +37,12 @@ class ChartDrawDelegate {
     private Paint chartPaint = new Paint();
     private Paint selectedPointsPaint = new Paint();
 
+    private ValueAnimator linesAlphaAnimator;
+    private RedrawCallback redrawCallback;
 
-    ChartDrawDelegate(float lineStrokeWidth, float bottomMarginAxisPx, float topMarginAxisPx) {
+    ChartDrawDelegate(float lineStrokeWidth, float bottomMarginAxisPx, float topMarginAxisPx, RedrawCallback redrawCallback) {
+        this.redrawCallback = redrawCallback;
+
         chartPaint.setStrokeWidth(lineStrokeWidth);
         chartPaint.setStyle(Paint.Style.STROKE);
         chartPaint.setAntiAlias(true);
@@ -52,7 +59,10 @@ class ChartDrawDelegate {
         this.linesCount = linesCount;
 
         linesAlphas = new int[linesCount];
+        lineVisibilities = new boolean[linesCount];
+
         Arrays.fill(linesAlphas, 0xff);
+        Arrays.fill(lineVisibilities, true);
 
         this.colors = colors;
 
@@ -65,6 +75,39 @@ class ChartDrawDelegate {
 
     void setLineAlpha(int lineIndex, int alpha) {
         linesAlphas[lineIndex] = alpha;
+    }
+
+    boolean isLineVisible(int lineIndex) {
+        return lineVisibilities[lineIndex];
+    }
+
+    boolean areLinesVisible() {
+        for (boolean visibility : lineVisibilities) {
+            if (visibility) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    void setLineVisibility(final int lineIndex, boolean visible) {
+        if (linesAlphaAnimator != null) {
+            linesAlphaAnimator.end();
+        }
+        linesAlphaAnimator = ValueAnimator.ofInt(visible ? 0 : 0xff, visible ? 0xff : 0);
+        linesAlphaAnimator.setDuration(ALPHA_ANIMATION_DURATION);
+
+        linesAlphaAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                setLineAlpha(lineIndex, (int) animation.getAnimatedValue());
+
+                redrawCallback.onRedrawRequired();
+            }
+        });
+        linesAlphaAnimator.start();
+
+        lineVisibilities[lineIndex] = visible;
     }
 
     void onDrawingParamsChanged(float x0, int firstVisiblePointIndex, float xStep, int lastVisiblePointIndex) {
@@ -144,8 +187,7 @@ class ChartDrawDelegate {
             Canvas canvas,
             Paint verticalAxisPaint,
             Paint backgroundPaint,
-            int lastSelectedPointIndex,
-            boolean[] linesVisibility
+            int lastSelectedPointIndex
     ) {
         if (lastSelectedPointIndex < 0) return;
 
@@ -164,7 +206,7 @@ class ChartDrawDelegate {
         );
 
         for (int i = 0; i < linesCount; i++) {
-            if (linesVisibility[i]) {
+            if (lineVisibilities[i]) {
 
                 tempColor = colors.get(i);
 

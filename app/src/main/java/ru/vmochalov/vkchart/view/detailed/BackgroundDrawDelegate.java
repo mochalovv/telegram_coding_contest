@@ -16,14 +16,17 @@ class BackgroundDrawDelegate {
     private float width;
     private float height;
 
-    //todo: make it private when refactoring is finished
-    Paint backgroundPaint = new Paint();
+    private Paint backgroundPaint = new Paint();
 
     BackgroundDrawDelegate(Resources resources) {
         this.resources = resources;
 
         backgroundPaint.setColor(resources.getColor(R.color.lightThemeChartBackground));
         backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+    }
+
+    Paint getBackgroundPaint() {
+        return backgroundPaint;
     }
 
     void setCanvasSize(float width, float height) {

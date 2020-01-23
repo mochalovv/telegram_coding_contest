@@ -12,7 +12,6 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
@@ -30,13 +29,10 @@ public class DetailedChartView extends View {
 
     private Chart chart;
 
-    private boolean[] linesVisibility;
-
     private double startPercent = 0;
     private double endPercent = 1;
 
     private int ANIMATION_DURATION = 500; //ms
-    private int ALPHA_ANIMATION_DURATION = 300;
 
     // styleable attributes
     private int axisTextSize;
@@ -122,7 +118,7 @@ public class DetailedChartView extends View {
                 axisTextSize,
                 BOTTOM_AXIS_MARGIN_PX,
                 TOP_AXIS_MARGIN_PX,
-                new VerticalAxisDrawDelegate.Callback() {
+                new RedrawCallback() {
                     @Override
                     public void onRedrawRequired() {
                         invalidate();
@@ -134,7 +130,7 @@ public class DetailedChartView extends View {
                 getResources(),
                 axisTextSize,
                 axisStrokeWidth,
-                new HorizontalLabelsDrawDelegate.Callback() {
+                new RedrawCallback() {
                     @Override
                     public void onRedrawRequired() {
                         invalidate();
@@ -145,7 +141,13 @@ public class DetailedChartView extends View {
         chartDrawDelegate = new ChartDrawDelegate(
                 lineStrokeWidth,
                 BOTTOM_AXIS_MARGIN_PX,
-                TOP_AXIS_MARGIN_PX
+                TOP_AXIS_MARGIN_PX,
+                new RedrawCallback() {
+                    @Override
+                    public void onRedrawRequired() {
+                        invalidate();
+                    }
+                }
         );
     }
 
@@ -231,7 +233,7 @@ public class DetailedChartView extends View {
         visibleSelectedValues.clear();
 
         for (int i = 0; i < chart.getLineIds().size(); i++) {
-            if (linesVisibility[i]) {
+            if (chartDrawDelegate.isLineVisible(i)) {
                 visibleSelectedValues.add(chart.getOrdinates().get(i).get(index));
             }
         }
@@ -281,14 +283,16 @@ public class DetailedChartView extends View {
             return;
         }
 
+        verticalAxisDrawDelegate.onLinesVisibilityUpdated(
+                chartDrawDelegate.areLinesVisible(),
+                newMaxVisibleValue
+        );
+
         if (!maxVisibleValueChangedOnStart) {
             maxVisibleValueChangedOnStart = true;
 
-            verticalAxisDrawDelegate.onLinesVisibilityUpdated(areLinesVisible(), newMaxVisibleValue);
             chartDrawDelegate.onMaxVisibleValueChanged(newMaxVisibleValue);
         } else {
-
-            verticalAxisDrawDelegate.onLinesVisibilityUpdated(areLinesVisible(), newMaxVisibleValue);
 
             if (maxVisibleValueAnimator != null) {
                 maxVisibleValueAnimator.pause();
@@ -368,21 +372,11 @@ public class DetailedChartView extends View {
         chartDrawDelegate.drawSelectedPoints(
                 canvas,
                 verticalAxisDrawDelegate.getVerticalAxisPaint(),
-                backgroundDrawDelegate.backgroundPaint,
-                lastSelectedPointIndex,
-                linesVisibility
+                backgroundDrawDelegate.getBackgroundPaint(),
+                lastSelectedPointIndex
         );
         verticalAxisDrawDelegate.drawVerticalLabels(canvas);
         horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
-    }
-
-    private boolean areLinesVisible() {
-        for (boolean visibility : linesVisibility) {
-            if (visibility) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void onVisibleRangeMoved(double startVisiblePercent, double endVisiblePercent) {
@@ -406,9 +400,6 @@ public class DetailedChartView extends View {
     public void setChart(Chart chart) {
         this.chart = chart;
 
-        this.linesVisibility = new boolean[chart.getLabels().size()];
-        Arrays.fill(linesVisibility, true);
-
         horizontalLabelsDrawDelegate.onChartInited(chart.getAbscissaAsString());
         chartDrawDelegate.onChartInited(chart.getLineIds().size(), chart.getColors(), chart.getOrdinates());
 
@@ -417,35 +408,12 @@ public class DetailedChartView extends View {
         invalidate();
     }
 
-    private ValueAnimator linesAlphaAnimator;
-
     public void setLineVisibility(String lineId, boolean visible) {
         final int lineIndex = chart.getLineIds().indexOf(lineId);
 
-        if (lineIndex != -1) {
-
-            if (linesVisibility[lineIndex] != visible) {
-
-                if (linesAlphaAnimator != null) {
-                    linesAlphaAnimator.end();
-                }
-                linesAlphaAnimator = ValueAnimator.ofInt(visible ? 0 : 0xff, visible ? 0xff : 0);
-                linesAlphaAnimator.setDuration(ALPHA_ANIMATION_DURATION);
-
-                linesAlphaAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                    @Override
-                    public void onAnimationUpdate(ValueAnimator animation) {
-                        chartDrawDelegate.setLineAlpha(lineIndex, (int) animation.getAnimatedValue());
-                        DetailedChartView.this.invalidate();
-                    }
-                });
-                linesAlphaAnimator.start();
-            }
-            linesVisibility[lineIndex] = visible;
-
-
+        if (lineIndex != -1 && chartDrawDelegate.isLineVisible(lineIndex) != visible) {
+            chartDrawDelegate.setLineVisibility(lineIndex, visible);
             initVariablesForVerticalChartDrawing();
-            invalidate();
         }
     }
 
@@ -464,7 +432,7 @@ public class DetailedChartView extends View {
         visiblePointValues.clear();
 
         for (int i = 0; i < chart.getLineIds().size(); i++) {
-            if (linesVisibility[i]) {
+            if (chartDrawDelegate.isLineVisible(i)) {
                 visiblePointValues.add(chart.getOrdinates().get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
             }
         }
