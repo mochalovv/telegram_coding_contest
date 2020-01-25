@@ -41,6 +41,8 @@ class ChartDrawDelegate {
 
     private int maxVisibleValue;
 
+    private int selectedPointIndex = -1;
+
     private float bottomMarginAxisPx;
     private float topMarginAxisPx;
 
@@ -95,6 +97,10 @@ class ChartDrawDelegate {
 
     void setLineAlpha(int lineIndex, int alpha) {
         linesAlphas[lineIndex] = alpha;
+    }
+
+    void setSelectedPointIndex(int selectedPointIndex) {
+        this.selectedPointIndex = selectedPointIndex;
     }
 
     boolean isLineVisible(int lineIndex) {
@@ -206,14 +212,13 @@ class ChartDrawDelegate {
     void drawSelectedPoints(
             Canvas canvas,
             Paint verticalAxisPaint,
-            Paint backgroundPaint,
-            int lastSelectedPointIndex
+            Paint backgroundPaint
     ) {
-        if (lastSelectedPointIndex < 0) return;
+        if (selectedPointIndex < 0) return;
 
         int pointValue;
 
-        float nextX = x0 + xStep * lastSelectedPointIndex;
+        float nextX = x0 + xStep * selectedPointIndex;
         float nextY;
         int tempColor;
 
@@ -239,7 +244,7 @@ class ChartDrawDelegate {
 
                 selectedPointsPaint.setColor(color);
 
-                pointValue = chartOrdinates.get(i).get(lastSelectedPointIndex);
+                pointValue = chartOrdinates.get(i).get(selectedPointIndex);
                 nextY = height - bottomMarginAxisPx - pointValue * yStep;
 
                 canvas.drawCircle(nextX, nextY, 10, backgroundPaint);
@@ -294,4 +299,19 @@ class ChartDrawDelegate {
             maxVisibleValue = newMaxVisibleValue;
         }
     }
+
+    List<Integer> getVisibleSelectedValues() {
+        List<Integer> visibleSelectedValues = new ArrayList<>();
+
+        if (selectedPointIndex >= 0) {
+            for (int i = 0; i < linesCount; i++) {
+                if (isLineVisible(i)) {
+                    visibleSelectedValues.add(chartOrdinates.get(i).get(selectedPointIndex));
+                }
+            }
+        }
+
+        return visibleSelectedValues;
+    }
+
 }

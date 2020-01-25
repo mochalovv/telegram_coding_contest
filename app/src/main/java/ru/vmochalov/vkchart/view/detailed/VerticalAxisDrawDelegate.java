@@ -104,9 +104,11 @@ public class VerticalAxisDrawDelegate {
     void setCanvasSize(float width, float height) {
         this.width = width;
         this.height = height;
+
+        onHeightChanged(height);
     }
 
-    void onHeightChanged(float height) {
+    private void onHeightChanged(float height) {
         yDelta = (height - bottomAxisMargin - topAxisMargin) / AXIS_LEVELS_COUNT;
     }
 

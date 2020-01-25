@@ -5,10 +5,8 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
-import android.view.MotionEvent;
 import android.view.View;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
@@ -31,8 +29,6 @@ public class DetailedChartView extends View {
     private int axisTextSize;
     private int lineStrokeWidth;
     private int axisStrokeWidth;
-
-    private OnChartClickedListener onChartClickedListener;
 
     private BackgroundDrawDelegate backgroundDrawDelegate;
     private VerticalAxisDrawDelegate verticalAxisDrawDelegate;
@@ -99,11 +95,6 @@ public class DetailedChartView extends View {
     }
 
     private void init() {
-        initTouchListener();
-        initDelegates();
-    }
-
-    private void initDelegates() {
         backgroundDrawDelegate = new BackgroundDrawDelegate(getResources());
         verticalAxisDrawDelegate = new VerticalAxisDrawDelegate(
                 getResources(),
@@ -158,93 +149,13 @@ public class DetailedChartView extends View {
     }
 
     public void setOnChartClickedListener(OnChartClickedListener listener) {
-        this.onChartClickedListener = listener;
-    }
-
-    public void initTouchListener() {
-        setOnTouchListener(new OnTouchListener() {
-
-            private float initialX;
-            private float initialY;
-
-            private boolean isHorizontalMovement;
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    initialX = event.getX();
-                    initialY = event.getY();
-
-                    lastSelectedPointIndex = horizontalLabelsDrawDelegate.getClosestPointIndex(event.getX());
-
-                    collectVisibleSelectedValues(lastSelectedPointIndex);
-
-                    if (onChartClickedListener != null) {
-                        onChartClickedListener.onTouch(event.getX(), lastSelectedPointIndex, visibleSelectedValues);
-                    }
-                } else if (event.getAction() == MotionEvent.ACTION_UP) {
-                    lastSelectedPointIndex = -1;
-                    isHorizontalMovement = false;
-                    if (onChartClickedListener != null) {
-                        onChartClickedListener.onButtonUp();
-                        onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
-                    }
-
-                } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                    lastSelectedPointIndex = horizontalLabelsDrawDelegate.getClosestPointIndex(event.getX());
-                    collectVisibleSelectedValues(lastSelectedPointIndex);
-
-                    boolean isHorizontal = isHorizontalMovement(event.getX(), event.getY());
-                    if (isHorizontal != isHorizontalMovement) {
-                        isHorizontalMovement = isHorizontal;
-
-                        if (onChartClickedListener != null) {
-                            onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
-                        }
-
-                    }
-
-                    if (onChartClickedListener != null) {
-                        onChartClickedListener.onTouch(event.getX(), lastSelectedPointIndex, visibleSelectedValues);
-                    }
-                } else {
-                    isHorizontalMovement = false;
-                    lastSelectedPointIndex = -1;
-
-                    if (onChartClickedListener != null) {
-                        onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
-                    }
-                }
-
-                invalidate();
-
-                return true;
-            }
-
-            private boolean isHorizontalMovement(float updatedX, float updatedY) {
-                if (initialX == updatedX) return false;
-
-                double tg = (updatedY - initialY) / (updatedX - initialX);
-
-                return Math.abs(tg) < 1;
-            }
-
-        });
-    }
-
-    private List<Integer> visibleSelectedValues = new ArrayList<>();
-    private int lastSelectedPointIndex = -1;
-
-    private List<Integer> collectVisibleSelectedValues(int index) {
-        visibleSelectedValues.clear();
-
-        for (int i = 0; i < chart.getLineIds().size(); i++) {
-            if (chartDrawDelegate.isLineVisible(i)) {
-                visibleSelectedValues.add(chart.getOrdinates().get(i).get(index));
-            }
-        }
-
-        return visibleSelectedValues;
+        setOnTouchListener(
+                new DetailedChartOnTouchListener(
+                        horizontalLabelsDrawDelegate,
+                        chartDrawDelegate,
+                        listener
+                )
+        );
     }
 
     private void initVariablesForHorizontalChartDrawing(float width) {
@@ -295,15 +206,10 @@ public class DetailedChartView extends View {
         backgroundDrawDelegate.setCanvasSize(width, height);
         verticalAxisDrawDelegate.setCanvasSize(width, height);
 
-        onHeightChanged(height);
+        horizontalLabelsDrawDelegate.onHeightChanged(height);
+        chartDrawDelegate.onHeightChanged(height);
 
         updateDrawingParams();
-    }
-
-    private void onHeightChanged(float height) {
-        horizontalLabelsDrawDelegate.onHeightChanged(height);
-        verticalAxisDrawDelegate.onHeightChanged(height);
-        chartDrawDelegate.onHeightChanged(height);
     }
 
     private void updateDrawingParams() {
@@ -323,8 +229,7 @@ public class DetailedChartView extends View {
         chartDrawDelegate.drawSelectedPoints(
                 canvas,
                 verticalAxisDrawDelegate.getVerticalAxisPaint(),
-                backgroundDrawDelegate.getBackgroundPaint(),
-                lastSelectedPointIndex
+                backgroundDrawDelegate.getBackgroundPaint()
         );
         verticalAxisDrawDelegate.drawVerticalLabels(canvas);
         horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
