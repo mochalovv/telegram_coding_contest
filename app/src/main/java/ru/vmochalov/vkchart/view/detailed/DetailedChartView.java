@@ -1,8 +1,5 @@
 package ru.vmochalov.vkchart.view.detailed;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -17,22 +14,18 @@ import java.util.List;
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.Chart;
 
-import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
-
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
  */
 public class DetailedChartView extends View {
 
     private final int TOP_AXIS_MARGIN_PX = 40;
-    private final int BOTTOM_AXIS_MARGIN_PX = TOP_AXIS_MARGIN_PX + 20;
+    private final int BOTTOM_AXIS_MARGIN_PX = 60;
 
     private Chart chart;
 
     private double startPercent = 0;
     private double endPercent = 1;
-
-    private int ANIMATION_DURATION = 500; //ms
 
     // styleable attributes
     private int axisTextSize;
@@ -146,6 +139,19 @@ public class DetailedChartView extends View {
                     @Override
                     public void onRedrawRequired() {
                         invalidate();
+                    }
+                },
+                new ChartDrawDelegate.MaxVisibleValueListener() {
+                    @Override
+                    public void onMaxVisibleValueChanged(int previousMaxValue, int newMaxValue) {
+                        verticalAxisDrawDelegate.onLinesVisibilityUpdated(
+                                chartDrawDelegate.areLinesVisible(),
+                                newMaxValue
+                        );
+
+                        verticalAxisDrawDelegate.animateVerticalAxis(
+                                previousMaxValue != 0 && newMaxValue < previousMaxValue
+                        );
                     }
                 }
         );
@@ -270,60 +276,6 @@ public class DetailedChartView extends View {
         chartDrawDelegate.onDrawingParamsChanged(x0, firstVisiblePointIndex, xStep, lastVisiblePointIndex);
     }
 
-    private boolean maxVisibleValueChangedOnStart;
-
-    private ValueAnimator maxVisibleValueAnimator;
-
-    private int oldFixedMaxVisibleValue;
-
-    private void initVariablesForVerticalChartDrawing() {
-        int newMaxVisibleValue = getMaxVisibleValue();
-
-        if (newMaxVisibleValue == oldFixedMaxVisibleValue) {
-            return;
-        }
-
-        verticalAxisDrawDelegate.onLinesVisibilityUpdated(
-                chartDrawDelegate.areLinesVisible(),
-                newMaxVisibleValue
-        );
-
-        if (!maxVisibleValueChangedOnStart) {
-            maxVisibleValueChangedOnStart = true;
-
-            chartDrawDelegate.onMaxVisibleValueChanged(newMaxVisibleValue);
-        } else {
-
-            if (maxVisibleValueAnimator != null) {
-                maxVisibleValueAnimator.pause();
-            }
-
-            maxVisibleValueAnimator = ValueAnimator.ofInt(oldFixedMaxVisibleValue, newMaxVisibleValue);
-            maxVisibleValueAnimator.setDuration(ANIMATION_DURATION);
-            maxVisibleValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    chartDrawDelegate.onMaxVisibleValueChanged((int) animation.getAnimatedValue());
-
-                    DetailedChartView.this.invalidate();
-                }
-            });
-            maxVisibleValueAnimator.addListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    super.onAnimationEnd(animation);
-                    verticalAxisDrawDelegate.onMaxVisibleValueAnimationEnd();
-                }
-            });
-
-            maxVisibleValueAnimator.start();
-
-            verticalAxisDrawDelegate.animateVerticalAxis(newMaxVisibleValue < oldFixedMaxVisibleValue);
-        }
-
-        oldFixedMaxVisibleValue = newMaxVisibleValue;
-    }
-
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
         measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
@@ -346,7 +298,6 @@ public class DetailedChartView extends View {
         onHeightChanged(height);
 
         updateDrawingParams();
-        initVariablesForVerticalChartDrawing();
     }
 
     private void onHeightChanged(float height) {
@@ -357,7 +308,7 @@ public class DetailedChartView extends View {
 
     private void updateDrawingParams() {
         if (chart != null && getWidth() > 0 && getHeight() > 0) {
-            initVariablesForVerticalChartDrawing();
+            chartDrawDelegate.updateVerticalDrawingParams(startPercent, endPercent);
             initVariablesForHorizontalChartDrawing(getWidth());
             horizontalLabelsDrawDelegate.updatedHorizontalLabelsScale();
         }
@@ -413,31 +364,8 @@ public class DetailedChartView extends View {
 
         if (lineIndex != -1 && chartDrawDelegate.isLineVisible(lineIndex) != visible) {
             chartDrawDelegate.setLineVisibility(lineIndex, visible);
-            initVariablesForVerticalChartDrawing();
+            chartDrawDelegate.updateVerticalDrawingParams(startPercent, endPercent);
         }
-    }
-
-    private int getMaxVisibleValue() {
-        List<List<Integer>> visiblePointValues = new ArrayList<>();
-
-        int absSize = chart.getAbscissa().size();
-
-        int firstVisiblePointIndex = (int) (absSize * startPercent);
-        int lastVisiblePointIndex = (int) Math.ceil(absSize * endPercent);
-
-        if (firstVisiblePointIndex > 0 && firstVisiblePointIndex == absSize) {
-            firstVisiblePointIndex = absSize - 1;
-        }
-
-        visiblePointValues.clear();
-
-        for (int i = 0; i < chart.getLineIds().size(); i++) {
-            if (chartDrawDelegate.isLineVisible(i)) {
-                visiblePointValues.add(chart.getOrdinates().get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
-            }
-        }
-
-        return (visiblePointValues.isEmpty()) ? 0 : getMaxValue(visiblePointValues);
     }
 
     public void setNightMode(boolean nightModeOn) {

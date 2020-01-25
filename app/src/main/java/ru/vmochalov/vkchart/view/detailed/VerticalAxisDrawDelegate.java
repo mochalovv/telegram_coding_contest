@@ -1,5 +1,7 @@
 package ru.vmochalov.vkchart.view.detailed;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
 import android.content.res.Resources;
 import android.graphics.Canvas;
@@ -85,6 +87,15 @@ public class VerticalAxisDrawDelegate {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
                 axisAnimationFraction = (float) animation.getAnimatedValue();
+                callback.onRedrawRequired();
+            }
+        });
+
+        verticalAxisValueAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                oldVerticalLevelValuesAsStrings = verticalLevelValuesAsStrings.clone();
+
                 callback.onRedrawRequired();
             }
         });
@@ -231,10 +242,6 @@ public class VerticalAxisDrawDelegate {
 
     Paint getVerticalAxisPaint() {
         return verticalAxisPaint;
-    }
-
-    void onMaxVisibleValueAnimationEnd() {
-        oldVerticalLevelValuesAsStrings = verticalLevelValuesAsStrings.clone();
     }
 
     void animateVerticalAxis(boolean maxVisibleValueDecreased) {

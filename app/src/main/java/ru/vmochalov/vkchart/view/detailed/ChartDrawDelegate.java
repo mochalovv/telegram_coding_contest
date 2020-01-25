@@ -5,14 +5,22 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 
 /**
  * Created by Vladimir Mochalov on 19.01.2020.
  */
 class ChartDrawDelegate {
     private final int ALPHA_ANIMATION_DURATION = 300;
+    private final int LINES_HEIGHT_ANIMATION_DURATION = 500;
+
+    interface MaxVisibleValueListener {
+        void onMaxVisibleValueChanged(int previousMaxValue, int newMaxValue);
+    }
 
     private int linesCount;
 
@@ -31,6 +39,8 @@ class ChartDrawDelegate {
 
     private float height;
 
+    private int maxVisibleValue;
+
     private float bottomMarginAxisPx;
     private float topMarginAxisPx;
 
@@ -38,10 +48,20 @@ class ChartDrawDelegate {
     private Paint selectedPointsPaint = new Paint();
 
     private ValueAnimator linesAlphaAnimator;
-    private RedrawCallback redrawCallback;
+    private ValueAnimator maxVisibleValueAnimator;
 
-    ChartDrawDelegate(float lineStrokeWidth, float bottomMarginAxisPx, float topMarginAxisPx, RedrawCallback redrawCallback) {
+    private RedrawCallback redrawCallback;
+    private MaxVisibleValueListener maxVisibleValueListener;
+
+    ChartDrawDelegate(
+            float lineStrokeWidth,
+            float bottomMarginAxisPx,
+            float topMarginAxisPx,
+            RedrawCallback redrawCallback,
+            MaxVisibleValueListener maxVisibleValueListener
+    ) {
         this.redrawCallback = redrawCallback;
+        this.maxVisibleValueListener = maxVisibleValueListener;
 
         chartPaint.setStrokeWidth(lineStrokeWidth);
         chartPaint.setStyle(Paint.Style.STROKE);
@@ -119,8 +139,8 @@ class ChartDrawDelegate {
         chartPoints = new float[(lastVisiblePointIndex - firstVisiblePointIndex + 1) * 4];
     }
 
-    void onMaxVisibleValueChanged(int maxVisibleValue) {
-        yStep = (height - bottomMarginAxisPx - topMarginAxisPx) / maxVisibleValue;
+    private void onMaxVisibleValueChanged(int newMaxVisibleValue) {
+        yStep = (height - bottomMarginAxisPx - topMarginAxisPx) / newMaxVisibleValue;
     }
 
     void drawChart(Canvas canvas) {
@@ -225,6 +245,53 @@ class ChartDrawDelegate {
                 canvas.drawCircle(nextX, nextY, 10, backgroundPaint);
                 canvas.drawCircle(nextX, nextY, 10, selectedPointsPaint);
             }
+        }
+    }
+
+    private int getMaxVisibleValue(double startPercent, double endPercent) {
+        int totalPointsNumber = chartOrdinates.get(0).size();
+
+        int firstVisiblePointIndex = (int) (totalPointsNumber * startPercent);
+        int lastVisiblePointIndex = (int) Math.ceil(totalPointsNumber * endPercent);
+
+        if (firstVisiblePointIndex > 0 && firstVisiblePointIndex == totalPointsNumber) {
+            firstVisiblePointIndex = totalPointsNumber - 1;
+        }
+
+        List<List<Integer>> visiblePointValues = new ArrayList<>();
+
+        for (int i = 0; i < linesCount; i++) {
+            if (isLineVisible(i)) {
+                visiblePointValues.add(chartOrdinates.get(i).subList(firstVisiblePointIndex, lastVisiblePointIndex));
+            }
+        }
+
+        return (visiblePointValues.isEmpty()) ? 0 : getMaxValue(visiblePointValues);
+    }
+
+    void updateVerticalDrawingParams(double startPercent, double endPercent) {
+        int newMaxVisibleValue = getMaxVisibleValue(startPercent, endPercent);
+
+        if (newMaxVisibleValue != maxVisibleValue) {
+            maxVisibleValueListener.onMaxVisibleValueChanged(maxVisibleValue, newMaxVisibleValue);
+
+            if (maxVisibleValueAnimator != null) {
+                maxVisibleValueAnimator.pause();
+            }
+
+            maxVisibleValueAnimator = ValueAnimator.ofInt(maxVisibleValue, newMaxVisibleValue);
+            maxVisibleValueAnimator.setDuration(LINES_HEIGHT_ANIMATION_DURATION);
+            maxVisibleValueAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    onMaxVisibleValueChanged((int) animation.getAnimatedValue());
+
+                    redrawCallback.onRedrawRequired();
+                }
+            });
+            maxVisibleValueAnimator.start();
+
+            maxVisibleValue = newMaxVisibleValue;
         }
     }
 }
