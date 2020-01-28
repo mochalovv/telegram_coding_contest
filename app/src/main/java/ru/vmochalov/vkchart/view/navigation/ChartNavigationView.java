@@ -15,6 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import ru.vmochalov.vkchart.chart.Chart;
+import ru.vmochalov.vkchart.view.detailed.ChartDrawDelegate;
+import ru.vmochalov.vkchart.view.detailed.RedrawCallback;
 
 import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 
@@ -49,6 +51,8 @@ public class ChartNavigationView extends View {
     private float firstPassiveStartPixel = 0;
     private float frameStart = INITIAL_FRAME_START_POSITION_PX;
     private float frameWidth = INITIAL_FRAME_WIDTH_PX;
+
+    private ChartDrawDelegate chartDrawDelegate;
 
     public interface FrameUpdatedListener {
         void onFrameUpdated(float start, float width);
@@ -87,12 +91,12 @@ public class ChartNavigationView extends View {
         initVariableForDrawing();
     }
 
-    public ChartNavigationView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
-        super(context, attributeSet, defStyleAttr, defStyleRes);
-        initTouchListener();
-
-        initVariableForDrawing();
-    }
+//    public ChartNavigationView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
+//        super(context, attributeSet, defStyleAttr, defStyleRes);
+//        initTouchListener();
+//
+//        initVariableForDrawing();
+//    }
 
     private void initTouchListener() {
         setOnTouchListener(chartNavigationTouchListener);
@@ -117,6 +121,8 @@ public class ChartNavigationView extends View {
 
             }
         }
+
+        chartDrawDelegate.onHeightChanged(height);
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -133,7 +139,8 @@ public class ChartNavigationView extends View {
         super.onDraw(canvas);
 
         drawBackground(canvas);
-        drawChart(canvas);
+        chartDrawDelegate.drawChart(canvas);
+//        drawChart(canvas);
     }
 
     private Paint activeBackgroundPaint = new Paint();
@@ -166,6 +173,21 @@ public class ChartNavigationView extends View {
         duff.setStyle(Paint.Style.FILL_AND_STROKE);
         duff.setColor(passiveBackgroundColor);
         duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
+
+        //todo: continue replacing chart drawing logic with delegate
+        chartDrawDelegate = new ChartDrawDelegate(
+                lineWidth,
+                bottomChartPadding,
+                topChartPadding,
+                new RedrawCallback() {
+                    @Override
+                    public void onRedrawRequired() {
+                        invalidate();
+                    }
+                },
+                null
+
+        );
     }
 
     private ValueAnimator maxValueAnimator;
@@ -195,11 +217,30 @@ public class ChartNavigationView extends View {
         }
     }
 
+    private void updateHorizontalDrawingParams() {
+
+//        if (xStep == 0 && width != 0) {
+//            xStep = width / lastDateIndex;
+//        }
+
+        chartDrawDelegate.onDrawingParamsChanged(
+                0,
+                0,
+                xStep,
+                chartPoints.length - 1
+        );
+
+    }
+
     private void updateVerticalDrawingParams(int maxValue) {
         if (height != 0) {
             yStep = (height - topChartPadding - bottomChartPadding) / maxValue;
         }
         this.maxValue = maxValue;
+
+
+        chartDrawDelegate.updateVerticalDrawingParams(0, 1);
+
     }
 
     private void drawBackground(Canvas canvas) {
@@ -298,6 +339,11 @@ public class ChartNavigationView extends View {
 
         onLinesChanged();
 
+
+        chartDrawDelegate.onChartInited(chart.getLineIds().size(), chart.getColors(), chart.getOrdinates());
+
+        updateHorizontalDrawingParams();
+
         invalidate();
     }
 
@@ -305,6 +351,12 @@ public class ChartNavigationView extends View {
 
     public void setLineVisibility(String lineId, boolean visible) {
         final int lineIndex = chart.getLineIds().indexOf(lineId);
+
+        if (lineIndex != -1 && chartDrawDelegate.isLineVisible(lineIndex) != visible) {
+            chartDrawDelegate.setLineVisibility(lineIndex, visible);
+            chartDrawDelegate.updateVerticalDrawingParams(0, 1);
+        }
+
         if (lineIndex > -1) {
 
             if (lineVisibility[lineIndex] != visible) {
@@ -351,7 +403,7 @@ public class ChartNavigationView extends View {
         return (visibleLines.isEmpty()) ? 0 : getMaxValue(visibleLines);
     }
 
-    public void setNightMode(boolean nightModeOn) {
+    public void onNightModeChanged(boolean nightModeOn) {
         activeBackgroundPaint.setColor(nightModeOn ? activeBackgroundColorNightMode : activeBackgroundColor);
         duff.setColor(nightModeOn ? passiveBackgroundColorNightMode : passiveBackgroundColor);
         framePaint.setColor(nightModeOn ? frameColorNightMode : frameColor);

@@ -14,7 +14,7 @@ import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 /**
  * Created by Vladimir Mochalov on 19.01.2020.
  */
-class ChartDrawDelegate {
+public class ChartDrawDelegate {
     private final int ALPHA_ANIMATION_DURATION = 300;
     private final int LINES_HEIGHT_ANIMATION_DURATION = 500;
 
@@ -55,7 +55,7 @@ class ChartDrawDelegate {
     private RedrawCallback redrawCallback;
     private MaxVisibleValueListener maxVisibleValueListener;
 
-    ChartDrawDelegate(
+    public ChartDrawDelegate(
             float lineStrokeWidth,
             float bottomMarginAxisPx,
             float topMarginAxisPx,
@@ -77,7 +77,7 @@ class ChartDrawDelegate {
         this.topMarginAxisPx = topMarginAxisPx;
     }
 
-    void onChartInited(int linesCount, List<Integer> colors, List<List<Integer>> chartOrdinates) {
+    public void onChartInited(int linesCount, List<Integer> colors, List<List<Integer>> chartOrdinates) {
         this.linesCount = linesCount;
 
         linesAlphas = new int[linesCount];
@@ -91,7 +91,7 @@ class ChartDrawDelegate {
         this.chartOrdinates = chartOrdinates;
     }
 
-    void onHeightChanged(float height) {
+    public void onHeightChanged(float height) {
         this.height = height;
     }
 
@@ -99,7 +99,7 @@ class ChartDrawDelegate {
         this.selectedPointIndex = selectedPointIndex;
     }
 
-    boolean isLineVisible(int lineIndex) {
+    public boolean isLineVisible(int lineIndex) {
         return lineVisibilities[lineIndex];
     }
 
@@ -112,7 +112,7 @@ class ChartDrawDelegate {
         return false;
     }
 
-    void setLineVisibility(final int lineIndex, boolean visible) {
+    public void setLineVisibility(final int lineIndex, boolean visible) {
         if (linesAlphaAnimator != null) {
             linesAlphaAnimator.end();
         }
@@ -132,7 +132,7 @@ class ChartDrawDelegate {
         lineVisibilities[lineIndex] = visible;
     }
 
-    void onDrawingParamsChanged(float x0, int firstVisiblePointIndex, float xStep, int lastVisiblePointIndex) {
+    public void onDrawingParamsChanged(float x0, int firstVisiblePointIndex, float xStep, int lastVisiblePointIndex) {
         this.x0 = x0;
         this.firstVisiblePointIndex = firstVisiblePointIndex;
         this.xStep = xStep;
@@ -145,7 +145,7 @@ class ChartDrawDelegate {
         yStep = (height - bottomMarginAxisPx - topMarginAxisPx) / newMaxVisibleValue;
     }
 
-    void drawChart(Canvas canvas) {
+    public void drawChart(Canvas canvas) {
         int chartPointsIndex;
         int tempColor;
         List<Integer> chartOrdinate;
@@ -270,11 +270,13 @@ class ChartDrawDelegate {
         return (visiblePointValues.isEmpty()) ? 0 : getMaxValue(visiblePointValues);
     }
 
-    void updateVerticalDrawingParams(double startPercent, double endPercent) {
+    public void updateVerticalDrawingParams(double startPercent, double endPercent) {
         int newMaxVisibleValue = getMaxVisibleValue(startPercent, endPercent);
 
         if (newMaxVisibleValue != maxVisibleValue) {
-            maxVisibleValueListener.onMaxVisibleValueChanged(maxVisibleValue, newMaxVisibleValue);
+            if (maxVisibleValueListener != null) {
+                maxVisibleValueListener.onMaxVisibleValueChanged(maxVisibleValue, newMaxVisibleValue);
+            }
 
             if (maxVisibleValueAnimator != null) {
                 maxVisibleValueAnimator.pause();

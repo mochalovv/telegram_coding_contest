@@ -247,7 +247,7 @@ public class ChartView extends LinearLayout {
 
     public void setNightMode(boolean nightModeOn) {
         detailedChartView.onNightModeChanged(nightModeOn);
-        chartNavigationView.setNightMode(nightModeOn);
+        chartNavigationView.onNightModeChanged(nightModeOn);
 
         int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
         setBackgroundColor(backgroundColor);
