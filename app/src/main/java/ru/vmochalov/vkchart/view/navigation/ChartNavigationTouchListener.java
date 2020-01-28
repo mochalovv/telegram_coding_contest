@@ -134,14 +134,8 @@ public class ChartNavigationTouchListener implements View.OnTouchListener {
             frameEndInPercent = 1;
         }
 
-        if (periodChangedListener != null & deltaX != 0) {
-            if (touchType == TouchType.FRAME_TOUCH) {
-                periodChangedListener.onPeriodMoved(frameStartInPercent, frameEndInPercent);
-            } else if (touchType == TouchType.LEFT_BORDER_TOUCH) {
-                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, false);
-            } else if (touchType == TouchType.RIGHT_BORDER_TOUCH) {
-                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
-            }
+        if (periodChangedListener != null & deltaX != 0 && touchType != TouchType.UNHANDLED_TOUCH) {
+            periodChangedListener.onPeriodChangedMoved(frameStartInPercent, frameEndInPercent);
         }
         boolean isHorizontal = isHorizontalMovement(initialTouchX, initialTouchY, x, y);
 

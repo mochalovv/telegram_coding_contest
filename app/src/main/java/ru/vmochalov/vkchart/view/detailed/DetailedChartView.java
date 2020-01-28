@@ -38,8 +38,6 @@ public class DetailedChartView extends View {
     public interface OnChartClickedListener {
         void onTouch(float x, int pointIndex, List<Integer> values);
 
-        void onMove(float x, int pointIndex, List<Integer> values);
-
         void onButtonUp();
 
         void onMovementDirectionChanged(boolean isHorizontal);
@@ -148,6 +146,46 @@ public class DetailedChartView extends View {
         );
     }
 
+    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
+        measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
+
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int) (measuredWidth * 0.85);
+        measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
+
+        setMeasuredDimension(measuredWidth, measuredHeight);
+    }
+
+    public void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+
+        float height = bottom - top;
+        float width = right - left;
+
+        backgroundDrawDelegate.setCanvasSize(width, height);
+        verticalAxisDrawDelegate.setCanvasSize(width, height);
+
+        horizontalLabelsDrawDelegate.onHeightChanged(height);
+        chartDrawDelegate.onHeightChanged(height);
+
+        updateDrawingParams();
+    }
+
+    public void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        backgroundDrawDelegate.drawBackground(canvas);
+        verticalAxisDrawDelegate.drawVerticalAxis(canvas);
+        chartDrawDelegate.drawChart(canvas);
+        chartDrawDelegate.drawSelectedPoints(
+                canvas,
+                verticalAxisDrawDelegate.getVerticalAxisPaint(),
+                backgroundDrawDelegate.getBackgroundPaint()
+        );
+        verticalAxisDrawDelegate.drawVerticalLabels(canvas);
+        horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
+    }
+
     public void setOnChartClickedListener(OnChartClickedListener listener) {
         setOnTouchListener(
                 new DetailedChartOnTouchListener(
@@ -183,33 +221,20 @@ public class DetailedChartView extends View {
             lastVisiblePointIndex = lastDateIndex;
         }
 
-        horizontalLabelsDrawDelegate.onDrawingParamsChanged(lastDateIndex, x0, xStep, firstVisiblePointIndex, lastVisiblePointIndex);
-        chartDrawDelegate.onDrawingParamsChanged(x0, firstVisiblePointIndex, xStep, lastVisiblePointIndex);
-    }
+        horizontalLabelsDrawDelegate.onDrawingParamsChanged(
+                lastDateIndex,
+                x0,
+                xStep,
+                firstVisiblePointIndex,
+                lastVisiblePointIndex
+        );
 
-    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
-        measuredWidth = Math.max(measuredWidth, getSuggestedMinimumWidth());
-
-        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : (int) (measuredWidth * 0.85);
-        measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
-
-        setMeasuredDimension(measuredWidth, measuredHeight);
-    }
-
-    public void onLayout(boolean changed, int left, int top, int right, int bottom) {
-        super.onLayout(changed, left, top, right, bottom);
-
-        float height = bottom - top;
-        float width = right - left;
-
-        backgroundDrawDelegate.setCanvasSize(width, height);
-        verticalAxisDrawDelegate.setCanvasSize(width, height);
-
-        horizontalLabelsDrawDelegate.onHeightChanged(height);
-        chartDrawDelegate.onHeightChanged(height);
-
-        updateDrawingParams();
+        chartDrawDelegate.onDrawingParamsChanged(
+                x0,
+                firstVisiblePointIndex,
+                xStep,
+                lastVisiblePointIndex
+        );
     }
 
     private void updateDrawingParams() {
@@ -220,31 +245,7 @@ public class DetailedChartView extends View {
         }
     }
 
-    public void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-
-        backgroundDrawDelegate.drawBackground(canvas);
-        verticalAxisDrawDelegate.drawVerticalAxis(canvas);
-        chartDrawDelegate.drawChart(canvas);
-        chartDrawDelegate.drawSelectedPoints(
-                canvas,
-                verticalAxisDrawDelegate.getVerticalAxisPaint(),
-                backgroundDrawDelegate.getBackgroundPaint()
-        );
-        verticalAxisDrawDelegate.drawVerticalLabels(canvas);
-        horizontalLabelsDrawDelegate.drawHorizontalLabels(canvas);
-    }
-
-    public void onVisibleRangeMoved(double startVisiblePercent, double endVisiblePercent) {
-        startPercent = startVisiblePercent;
-        endPercent = endVisiblePercent;
-
-        updateDrawingParams();
-
-        invalidate();
-    }
-
-    public void onVisibleRangeScaleChanged(double startVisiblePercent, double endVisiblePercent, boolean startIsStable) {
+    public void onVisibleRangeChanged(double startVisiblePercent, double endVisiblePercent) {
         startPercent = startVisiblePercent;
         endPercent = endVisiblePercent;
 
@@ -273,7 +274,7 @@ public class DetailedChartView extends View {
         }
     }
 
-    public void setNightMode(boolean nightModeOn) {
+    public void onNightModeChanged(boolean nightModeOn) {
         backgroundDrawDelegate.onNightModeChanged(nightModeOn);
         verticalAxisDrawDelegate.onNightModeChanged(nightModeOn);
         horizontalLabelsDrawDelegate.onNightModeChanged(nightModeOn);

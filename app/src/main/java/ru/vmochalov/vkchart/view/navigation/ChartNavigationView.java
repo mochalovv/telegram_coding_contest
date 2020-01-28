@@ -111,7 +111,7 @@ public class ChartNavigationView extends View {
                 double frameStartInPercent = frameStart / width;
                 double frameEndInPercent = (frameStart + frameWidth) / width;
 
-                periodChangedListener.onPeriodLengthChanged(frameStartInPercent, frameEndInPercent, true);
+                periodChangedListener.onPeriodChangedMoved(frameStartInPercent,  frameEndInPercent);
 
                 initialValueIsSent = true;
 

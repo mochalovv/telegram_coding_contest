@@ -99,13 +99,8 @@ public class ChartView extends LinearLayout {
         chartNavigationView.setPeriodChangedListener(
                 new PeriodChangedListener() {
                     @Override
-                    public void onPeriodLengthChanged(double periodStart, double periodEnd, boolean startIsStable) {
-                        detailedChartView.onVisibleRangeScaleChanged(periodStart, periodEnd, startIsStable);
-                    }
-
-                    @Override
-                    public void onPeriodMoved(double periodStart, double periodEnd) {
-                        detailedChartView.onVisibleRangeMoved(periodStart, periodEnd);
+                    public void onPeriodChangedMoved(double periodStart, double periodEnd) {
+                        detailedChartView.onVisibleRangeChanged(periodStart, periodEnd);
                     }
 
                     @Override
@@ -206,14 +201,6 @@ public class ChartView extends LinearLayout {
                 }
 
                 @Override
-                public void onMove(float x, int pointIndex, List<Integer> values) {
-                    if (infoView.getVisibility() == View.VISIBLE) {
-                        updateInfo(pointIndex);
-                        updateInfoViewX(x);
-                    }
-                }
-
-                @Override
                 public void onButtonUp() {
                     infoView.setVisibility(View.GONE);
                 }
@@ -259,7 +246,7 @@ public class ChartView extends LinearLayout {
     }
 
     public void setNightMode(boolean nightModeOn) {
-        detailedChartView.setNightMode(nightModeOn);
+        detailedChartView.onNightModeChanged(nightModeOn);
         chartNavigationView.setNightMode(nightModeOn);
 
         int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
