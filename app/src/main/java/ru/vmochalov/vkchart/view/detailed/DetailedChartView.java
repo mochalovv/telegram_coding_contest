@@ -63,13 +63,6 @@ public class DetailedChartView extends View {
         init();
     }
 
-    public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
-        super(context, attributeSet, defStyleAttr, defStyleRes);
-
-        handleAttributeSet(attributeSet);
-        init();
-    }
-
     private void handleAttributeSet(AttributeSet attributeSet) {
         TypedArray attributes = getContext().obtainStyledAttributes(attributeSet, R.styleable.DetailedChartView);
         Resources resources = getContext().getResources();

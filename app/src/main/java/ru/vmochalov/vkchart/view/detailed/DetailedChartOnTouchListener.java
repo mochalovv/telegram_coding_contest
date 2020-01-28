@@ -40,7 +40,7 @@ public class DetailedChartOnTouchListener implements View.OnTouchListener {
             onChartClickedListener.onTouch(
                     event.getX(),
                     selectedPointIndex,
-                    chartDrawDelegate.getVisibleSelectedValues()
+                    chartDrawDelegate.getSelectedValues()
             );
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             chartDrawDelegate.setSelectedPointIndex(-1);
@@ -66,7 +66,7 @@ public class DetailedChartOnTouchListener implements View.OnTouchListener {
             onChartClickedListener.onTouch(
                     event.getX(),
                     lastSelectedPointIndex,
-                    chartDrawDelegate.getVisibleSelectedValues()
+                    chartDrawDelegate.getSelectedValues()
             );
 
         } else {

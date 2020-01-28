@@ -177,7 +177,6 @@ public class VerticalAxisDrawDelegate {
         if (animationIsHappening) {
             drawVerticalLabelsAnimated(canvas, axisAnimationFraction, axisAnimationDirectionAppearFromBottom, true);
             drawVerticalLabelsAnimated(canvas, axisAnimationFraction, !axisAnimationDirectionAppearFromBottom, false);
-
         } else {
             for (int i = 0; i < AXIS_LEVELS_COUNT; i++) {
                 float verticalYAxisCoord = height - bottomAxisMargin - i * yDelta;

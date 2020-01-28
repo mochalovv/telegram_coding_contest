@@ -95,10 +95,6 @@ class ChartDrawDelegate {
         this.height = height;
     }
 
-    void setLineAlpha(int lineIndex, int alpha) {
-        linesAlphas[lineIndex] = alpha;
-    }
-
     void setSelectedPointIndex(int selectedPointIndex) {
         this.selectedPointIndex = selectedPointIndex;
     }
@@ -126,7 +122,7 @@ class ChartDrawDelegate {
         linesAlphaAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator animation) {
-                setLineAlpha(lineIndex, (int) animation.getAnimatedValue());
+                linesAlphas[lineIndex] = (int) animation.getAnimatedValue();
 
                 redrawCallback.onRedrawRequired();
             }
@@ -300,7 +296,7 @@ class ChartDrawDelegate {
         }
     }
 
-    List<Integer> getVisibleSelectedValues() {
+    List<Integer> getSelectedValues() {
         List<Integer> visibleSelectedValues = new ArrayList<>();
 
         if (selectedPointIndex >= 0) {
