@@ -2,10 +2,6 @@ package ru.vmochalov.vkchart.view.navigation;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.util.AttributeSet;
 import android.view.View;
 
@@ -17,27 +13,16 @@ public class ChartNavigationView extends View {
 
     private static final float INITIAL_FRAME_START_POSITION_PX = 0;
     private static final float INITIAL_FRAME_WIDTH_PX = 300;
+    private static final float LINE_STROKE_WIDTH_PX = 2;
+    private static final int PREFERRED_HEIGHT_PX = 75;
+    private static final float VERTICAL_CHART_PADDING_PX = 3;
 
     private Chart chart;
 
-    // styleable attributes
-    private float frameHorizontalBorderWidth = 10;
-    private float frameVerticalBorderWidth = 4;
-
-    private float lineWidth = 2;
-
-    //todo: obtain from resources
-    private int prefferedHeight = 75;
-
     private PeriodChangedListener periodChangedListener;
 
-    private float frameStart = INITIAL_FRAME_START_POSITION_PX;
-    private float frameWidth = INITIAL_FRAME_WIDTH_PX;
-
-    private float topChartPadding = 3;
-    private float bottomChartPadding = 3;
-
     private ChartDrawDelegate chartDrawDelegate;
+    private FrameDrawDelegate frameDrawDelegate;
 
     public interface FrameUpdatedListener {
         void onFrameUpdated(float start, float width);
@@ -49,8 +34,7 @@ public class ChartNavigationView extends View {
             new FrameUpdatedListener() {
                 @Override
                 public void onFrameUpdated(float start, float width) {
-                    frameStart = start;
-                    frameWidth = width;
+                    frameDrawDelegate.onFrameUpdated(start, width);
                 }
             }
     );
@@ -90,8 +74,8 @@ public class ChartNavigationView extends View {
 
         if (!initialValueIsSent) {
             if (periodChangedListener != null) {
-                double frameStartInPercent = frameStart / width;
-                double frameEndInPercent = (frameStart + frameWidth) / width;
+                double frameStartInPercent = frameDrawDelegate.getFrameStart() / width;
+                double frameEndInPercent = (frameDrawDelegate.getFrameEnd()) / width;
 
                 periodChangedListener.onPeriodChangedMoved(frameStartInPercent, frameEndInPercent);
 
@@ -104,7 +88,7 @@ public class ChartNavigationView extends View {
     }
 
     public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : prefferedHeight;
+        int measuredHeight = MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY ? MeasureSpec.getSize(heightMeasureSpec) : PREFERRED_HEIGHT_PX;
         int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
 
         measuredHeight = Math.max(measuredHeight, getSuggestedMinimumHeight());
@@ -113,50 +97,19 @@ public class ChartNavigationView extends View {
         setMeasuredDimension(measuredWidth, measuredHeight);
     }
 
-    //todo: continue moving code from navigation view to its background delegate
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        drawBackground(canvas);
+        frameDrawDelegate.drawFrame(canvas);
         chartDrawDelegate.drawChart(canvas);
-        drawShadow(canvas);
+        frameDrawDelegate.drawShadow(canvas);
     }
-
-    private void drawShadow(Canvas canvas) {
-        canvas.drawRect(0, 0, (int) frameStart - 1, getHeight(), duff);
-        canvas.drawRect((int) (frameStart + frameWidth), 0, getWidth(), getHeight(), duff);
-    }
-
-//    private Paint activeBackgroundPaint = new Paint();
-//    private Paint framePaint = new Paint();
-    private Paint duff = new Paint();
-    private Paint chartPaintActive = new Paint();
-
-//    private int activeBackgroundColor = Color.WHITE;
-//    private int activeBackgroundColorNightMode = Color.rgb(29, 39, 51);
-//    private int frameColor = Color.rgb(219, 231, 240);
-//    private int frameColorNightMode = Color.rgb(43, 66, 86);
-    private int passiveBackgroundColor = Color.argb(0xa0, 245, 248, 249);
-    private int passiveBackgroundColorNightMode = Color.argb(0xa0, 25, 33, 46);
 
     private void initVariableForDrawing() {
-//        activeBackgroundPaint.setColor(activeBackgroundColor);
-//        activeBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
-//
-//        framePaint.setColor(frameColor);
-//        framePaint.setStyle(Paint.Style.FILL_AND_STROKE);
-
-        chartPaintActive.setStyle(Paint.Style.STROKE);
-        chartPaintActive.setStrokeWidth(lineWidth);
-
-        duff.setStyle(Paint.Style.FILL_AND_STROKE);
-        duff.setColor(passiveBackgroundColor);
-        duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
-
         chartDrawDelegate = new ChartDrawDelegate(
-                lineWidth,
-                bottomChartPadding,
-                topChartPadding,
+                LINE_STROKE_WIDTH_PX,
+                VERTICAL_CHART_PADDING_PX,
+                VERTICAL_CHART_PADDING_PX,
                 new RedrawCallback() {
                     @Override
                     public void onRedrawRequired() {
@@ -164,6 +117,11 @@ public class ChartNavigationView extends View {
                     }
                 },
                 null
+        );
+
+        frameDrawDelegate = new FrameDrawDelegate(
+                INITIAL_FRAME_START_POSITION_PX,
+                INITIAL_FRAME_WIDTH_PX
         );
     }
 
@@ -183,19 +141,6 @@ public class ChartNavigationView extends View {
 
     private void updateVerticalDrawingParams() {
         chartDrawDelegate.updateVerticalDrawingParams(0, 1);
-    }
-
-    private void drawBackground(Canvas canvas) {
-        // draw active background
-        canvas.drawRect(0, 0, getWidth(), getHeight(), activeBackgroundPaint);
-
-        // draw frame
-        canvas.drawRect(frameStart, 0, frameStart + frameWidth - 1, frameVerticalBorderWidth, framePaint);
-        canvas.drawRect(frameStart, getHeight() - frameVerticalBorderWidth, frameStart + frameWidth - 1, getHeight(), framePaint);
-        canvas.drawRect(frameStart, 0, frameStart + frameHorizontalBorderWidth, getHeight(), framePaint);
-        canvas.drawRect(frameStart + frameWidth - 1 - frameHorizontalBorderWidth, 0, frameStart + frameWidth - 1, getHeight(), framePaint);
-
-//        drawShadow(canvas);
     }
 
     public void setChart(Chart chart) {
@@ -224,9 +169,7 @@ public class ChartNavigationView extends View {
     }
 
     public void onNightModeChanged(boolean nightModeOn) {
-        activeBackgroundPaint.setColor(nightModeOn ? activeBackgroundColorNightMode : activeBackgroundColor);
-        duff.setColor(nightModeOn ? passiveBackgroundColorNightMode : passiveBackgroundColor);
-        framePaint.setColor(nightModeOn ? frameColorNightMode : frameColor);
+        frameDrawDelegate.onNightModeChanged(nightModeOn);
 
         invalidate();
     }
