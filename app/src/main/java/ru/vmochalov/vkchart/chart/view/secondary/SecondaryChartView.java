@@ -6,9 +6,9 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import ru.vmochalov.vkchart.chart.data.Chart;
-import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
 import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
+import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.secondary.delegates.FrameDrawDelegate;
 
 public class SecondaryChartView extends View {
@@ -122,6 +122,7 @@ public class SecondaryChartView extends View {
         );
 
         frameDrawDelegate = new FrameDrawDelegate(
+                getResources(),
                 INITIAL_FRAME_START_POSITION_PX,
                 INITIAL_FRAME_WIDTH_PX
         );

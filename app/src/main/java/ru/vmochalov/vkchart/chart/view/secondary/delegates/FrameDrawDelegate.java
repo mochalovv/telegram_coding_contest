@@ -1,10 +1,12 @@
 package ru.vmochalov.vkchart.chart.view.secondary.delegates;
 
+import android.content.res.Resources;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+
+import ru.vmochalov.vkchart.R;
 
 /**
  * Created by Vladimir Mochalov on 29.01.2020.
@@ -14,33 +16,30 @@ public class FrameDrawDelegate {
     private static final float FRAME_VERTICAL_BORDER_WIDTH = 10;
     private static final float FRAME_HORIZONTAL_BORDER_WIDTH = 4;
 
-    private Paint activeBackgroundPaint = new Paint();
-    private Paint framePaint = new Paint();
-    private Paint duff = new Paint();
+    private Resources resources;
 
-    private int activeBackgroundColor = Color.WHITE;
-    private int activeBackgroundColorNightMode = Color.rgb(29, 39, 51);
-    private int frameColor = Color.rgb(219, 231, 240);
-    private int frameColorNightMode = Color.rgb(43, 66, 86);
-    private int passiveBackgroundColor = Color.argb(0xa0, 245, 248, 249);
-    private int passiveBackgroundColorNightMode = Color.argb(0xa0, 25, 33, 46);
+    private Paint backgroundPaint = new Paint();
+    private Paint framePaint = new Paint();
+    private Paint shadowPaint = new Paint();
 
     private float frameStart;
     private float frameWidth;
 
-    public FrameDrawDelegate(float frameStart, float frameWidth) {
+    public FrameDrawDelegate(Resources resources, float frameStart, float frameWidth) {
+        this.resources = resources;
+
         this.frameStart = frameStart;
         this.frameWidth = frameWidth;
 
-        activeBackgroundPaint.setColor(activeBackgroundColor);
-        activeBackgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        backgroundPaint.setColor(resources.getColor(R.color.lightSecondaryBackground));
+        backgroundPaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
-        framePaint.setColor(frameColor);
+        framePaint.setColor(resources.getColor(R.color.lightSecondaryFrame));
         framePaint.setStyle(Paint.Style.FILL_AND_STROKE);
 
-        duff.setStyle(Paint.Style.FILL_AND_STROKE);
-        duff.setColor(passiveBackgroundColor);
-        duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
+        shadowPaint.setStyle(Paint.Style.FILL_AND_STROKE);
+        shadowPaint.setColor(resources.getColor(R.color.lightSecondaryShadow));
+        shadowPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
     }
 
     public void drawFrame(Canvas canvas) {
@@ -48,7 +47,7 @@ public class FrameDrawDelegate {
         int height = canvas.getHeight();
 
         // draw active background
-        canvas.drawRect(0, 0, width, height, activeBackgroundPaint);
+        canvas.drawRect(0, 0, width, height, backgroundPaint);
 
         // draw frame
         canvas.drawRect(
@@ -85,14 +84,24 @@ public class FrameDrawDelegate {
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
-        canvas.drawRect(0, 0, (int) frameStart - 1, height, duff);
-        canvas.drawRect((int) (frameStart + frameWidth), 0, width, height, duff);
+        canvas.drawRect(0, 0, (int) frameStart - 1, height, shadowPaint);
+        canvas.drawRect((int) (frameStart + frameWidth), 0, width, height, shadowPaint);
     }
 
     public void onNightModeChanged(boolean nightModeOn) {
-        activeBackgroundPaint.setColor(nightModeOn ? activeBackgroundColorNightMode : activeBackgroundColor);
-        framePaint.setColor(nightModeOn ? frameColorNightMode : frameColor);
-        duff.setColor(nightModeOn ? passiveBackgroundColorNightMode : passiveBackgroundColor);
+        int backgroundColor = resources.getColor(
+                nightModeOn ? R.color.darkSecondaryBackground : R.color.lightSecondaryBackground
+        );
+        int frameColor = resources.getColor(
+                nightModeOn ? R.color.darkSecondaryFrame : R.color.lightSecondaryFrame
+        );
+        int shadowColor = resources.getColor(
+                nightModeOn ? R.color.darkSecondaryShadow : R.color.lightSecondaryShadow
+        );
+
+        backgroundPaint.setColor(backgroundColor);
+        framePaint.setColor(frameColor);
+        shadowPaint.setColor(shadowColor);
     }
 
     public void onFrameUpdated(float frameStart, float frameWidth) {
