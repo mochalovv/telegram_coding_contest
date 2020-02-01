@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/nightMode"
-        android:icon="@drawable/ic_mood_red_200_24dp"
+        android:icon="@drawable/ic_moon_white_24dp"
         android:showAsAction="always"
         android:title="@string/menu_night_mode" />
 </menu>

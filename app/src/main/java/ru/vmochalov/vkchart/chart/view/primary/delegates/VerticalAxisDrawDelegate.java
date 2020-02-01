@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view.detailed;
+package ru.vmochalov.vkchart.chart.view.primary.delegates;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -9,6 +9,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import ru.vmochalov.vkchart.R;
+import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
 
 /**
  * Created by Vladimir Mochalov on 18.01.2020.
@@ -46,7 +47,7 @@ public class VerticalAxisDrawDelegate {
     private float axisAnimationFraction;
 
 
-    VerticalAxisDrawDelegate(
+    public VerticalAxisDrawDelegate(
             Resources resources,
             float axisStrokeWidth,
             float axisTextSize,
@@ -101,7 +102,7 @@ public class VerticalAxisDrawDelegate {
         });
     }
 
-    void setCanvasSize(float width, float height) {
+    public void setCanvasSize(float width, float height) {
         this.width = width;
         this.height = height;
 
@@ -112,7 +113,7 @@ public class VerticalAxisDrawDelegate {
         yDelta = (height - bottomAxisMargin - topAxisMargin) / AXIS_LEVELS_COUNT;
     }
 
-    void drawVerticalAxis(Canvas canvas) {
+    public void drawVerticalAxis(Canvas canvas) {
         boolean isAnimationHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
 
         if (isAnimationHappening) {
@@ -171,7 +172,7 @@ public class VerticalAxisDrawDelegate {
         canvas.drawLines(firstVerticalLineAnimationCoords, verticalAxisPaint);
     }
 
-    void drawVerticalLabels(Canvas canvas) {
+    public void drawVerticalLabels(Canvas canvas) {
         boolean animationIsHappening = axisAnimationFraction != 0.0f && axisAnimationFraction != 1.0f;
 
         if (animationIsHappening) {
@@ -216,7 +217,7 @@ public class VerticalAxisDrawDelegate {
         canvas.drawText(labelsToUse[0], 0, verticalYAxisCoordAnimation - AXIS_TEXT_MARGIN_PX, verticalLabelsPaint);
     }
 
-    void onLinesVisibilityUpdated(boolean areLinesVisible, int newMaxVisibleValue) {
+    public void onLinesVisibilityUpdated(boolean areLinesVisible, int newMaxVisibleValue) {
         int verticalLevelDelta = (newMaxVisibleValue / AXIS_LEVELS_COUNT);
 
         if (!areLinesVisible || verticalLevelDelta == 0)
@@ -233,7 +234,7 @@ public class VerticalAxisDrawDelegate {
         }
     }
 
-    void onNightModeChanged(boolean nightModeOn) {
+    public void onNightModeChanged(boolean nightModeOn) {
         int verticalAxisColor = resources.getColor(nightModeOn ? R.color.darkThemeAxis : R.color.lightThemeAxis);
         int labelsColor = resources.getColor(nightModeOn ? R.color.darkThemeLabelText : R.color.lightThemeLabelText);
 
@@ -241,11 +242,11 @@ public class VerticalAxisDrawDelegate {
         verticalLabelsPaint.setColor(labelsColor);
     }
 
-    Paint getVerticalAxisPaint() {
+    public Paint getVerticalAxisPaint() {
         return verticalAxisPaint;
     }
 
-    void animateVerticalAxis(boolean maxVisibleValueDecreased) {
+    public void animateVerticalAxis(boolean maxVisibleValueDecreased) {
         if (verticalAxisValueAnimator != null) {
             verticalAxisValueAnimator.pause();
         }

@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view;
+package ru.vmochalov.vkchart.chart.view;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -19,10 +19,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
-import ru.vmochalov.vkchart.chart.Chart;
-import ru.vmochalov.vkchart.view.detailed.DetailedChartView;
-import ru.vmochalov.vkchart.view.navigation.PeriodChangedListener;
-import ru.vmochalov.vkchart.view.navigation.ChartNavigationView;
+import ru.vmochalov.vkchart.chart.data.Chart;
+import ru.vmochalov.vkchart.chart.view.primary.PrimaryChartView;
+import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
+import ru.vmochalov.vkchart.chart.view.secondary.SecondaryChartView;
 
 import static android.util.TypedValue.COMPLEX_UNIT_SP;
 
@@ -31,8 +31,8 @@ import static android.util.TypedValue.COMPLEX_UNIT_SP;
  */
 public class ChartView extends LinearLayout {
 
-    private DetailedChartView detailedChartView;
-    private ChartNavigationView chartNavigationView;
+    private PrimaryChartView primaryChartView;
+    private SecondaryChartView secondaryChartView;
     private LinearLayout chartContainer;
 
     private View infoView;
@@ -88,19 +88,19 @@ public class ChartView extends LinearLayout {
     }
 
     private void initInnerViews() {
-        detailedChartView = findViewById(R.id.chart);
-        chartNavigationView = findViewById(R.id.chartNavigation);
+        primaryChartView = findViewById(R.id.chart);
+        secondaryChartView = findViewById(R.id.chartNavigation);
         chartContainer = findViewById(R.id.chartContainer);
         infoView = findViewById(R.id.infoView);
         dateView = findViewById(R.id.dateView);
         valuesView = findViewById(R.id.values);
         namesView = findViewById(R.id.chartNames);
 
-        chartNavigationView.setPeriodChangedListener(
+        secondaryChartView.setPeriodChangedListener(
                 new PeriodChangedListener() {
                     @Override
                     public void onPeriodChangedMoved(double periodStart, double periodEnd) {
-                        detailedChartView.onVisibleRangeChanged(periodStart, periodEnd);
+                        primaryChartView.onVisibleRangeChanged(periodStart, periodEnd);
                     }
 
                     @Override
@@ -124,8 +124,8 @@ public class ChartView extends LinearLayout {
         chart = parseChartFromJson(jsonSource);
 
         if (chart != null) {
-            detailedChartView.setChart(chart);
-            chartNavigationView.setChart(chart);
+            primaryChartView.setChart(chart);
+            secondaryChartView.setChart(chart);
 
             final List<String> lineIds = chart.getLineIds();
             List<String> lineLabels = chart.getLabels();
@@ -149,8 +149,8 @@ public class ChartView extends LinearLayout {
                     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                         String lineId = buttonView.getTag().toString();
 
-                        detailedChartView.setLineVisibility(lineId, isChecked);
-                        chartNavigationView.setLineVisibility(lineId, isChecked);
+                        primaryChartView.setLineVisibility(lineId, isChecked);
+                        secondaryChartView.setLineVisibility(lineId, isChecked);
 
                         visibility[index] = isChecked;
 
@@ -189,7 +189,7 @@ public class ChartView extends LinearLayout {
 
             }
 
-            detailedChartView.setOnChartClickedListener(new DetailedChartView.OnChartClickedListener() {
+            primaryChartView.setOnChartClickedListener(new PrimaryChartView.OnChartClickedListener() {
 
                 @Override
                 public void onTouch(float x, int pointIndex, List<Integer> values) {
@@ -234,8 +234,8 @@ public class ChartView extends LinearLayout {
 
                     newX = x + infoWidthGap;
 
-                    if ((newX + infoView.getWidth()) > detailedChartView.getWidth()) {
-                        newX = detailedChartView.getWidth() - infoView.getWidth();
+                    if ((newX + infoView.getWidth()) > primaryChartView.getWidth()) {
+                        newX = primaryChartView.getWidth() - infoView.getWidth();
                     }
 
                     infoView.setX(newX);
@@ -246,8 +246,8 @@ public class ChartView extends LinearLayout {
     }
 
     public void setNightMode(boolean nightModeOn) {
-        detailedChartView.onNightModeChanged(nightModeOn);
-        chartNavigationView.setNightMode(nightModeOn);
+        primaryChartView.onNightModeChanged(nightModeOn);
+        secondaryChartView.onNightModeChanged(nightModeOn);
 
         int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
         setBackgroundColor(backgroundColor);

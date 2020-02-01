@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view.detailed;
+package ru.vmochalov.vkchart.chart.view.primary.delegates;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -12,13 +12,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
+import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
 
 import static ru.vmochalov.vkchart.utils.CalculationUtil.getPowOfTwo;
 
 /**
  * Created by Vladimir Mochalov on 19.01.2020.
  */
-class HorizontalLabelsDrawDelegate {
+public class HorizontalLabelsDrawDelegate {
 
     private final int AXES_TEXT_SIZE_PX = 20;
     private final int FIRST_DATE_INDEX = 0;
@@ -53,7 +54,7 @@ class HorizontalLabelsDrawDelegate {
     private Paint labelPaint = new Paint();
     private Paint labelPaintAnimation = new Paint();
 
-    HorizontalLabelsDrawDelegate(Resources resources, float axisTextSize, float axisStrokeWidth, RedrawCallback redrawCallback) {
+    public HorizontalLabelsDrawDelegate(Resources resources, float axisTextSize, float axisStrokeWidth, RedrawCallback redrawCallback) {
         this.resources = resources;
         this.redrawCallback = redrawCallback;
 
@@ -73,12 +74,12 @@ class HorizontalLabelsDrawDelegate {
 
     }
 
-    void onChartInited(List<String> labels) {
+    public void onChartInited(List<String> labels) {
         chartAbscissaLabels = labels;
         labelsVisibility = new boolean[labels.size()];
     }
 
-    void onDrawingParamsChanged(int lastDateIndex, float x0, float xStep, int firstVisiblePointIndex, int lastVisiblePointIndex) {
+    public void onDrawingParamsChanged(int lastDateIndex, float x0, float xStep, int firstVisiblePointIndex, int lastVisiblePointIndex) {
         this.lastDateIndex = lastDateIndex;
         this.x0 = x0;
         this.xStep = xStep;
@@ -86,17 +87,17 @@ class HorizontalLabelsDrawDelegate {
         this.lastVisiblePointIndex = lastVisiblePointIndex;
     }
 
-    void onNightModeChanged(boolean nightModeOn) {
+    public void onNightModeChanged(boolean nightModeOn) {
         int labelsColor = resources.getColor(nightModeOn ? R.color.darkThemeLabelText : R.color.lightThemeLabelText);
 
         labelPaint.setColor(labelsColor);
     }
 
-    void onHeightChanged(float height) {
+    public void onHeightChanged(float height) {
         horizontalLabelY = height - AXES_TEXT_SIZE_PX / 2;
     }
 
-    void drawHorizontalLabels(Canvas canvas) {
+    public void drawHorizontalLabels(Canvas canvas) {
 
         boolean animationInProgress = labelsAlphaAnimationInProgress;
 
@@ -136,7 +137,7 @@ class HorizontalLabelsDrawDelegate {
         }
     }
 
-    void updatedHorizontalLabelsScale() {
+    public void updatedHorizontalLabelsScale() {
         int newScale = getInitialScale();
 
         if (newScale != currentLabelsScale) {
@@ -264,7 +265,7 @@ class HorizontalLabelsDrawDelegate {
         return index >= FIRST_DATE_INDEX && index <= lastDateIndex;
     }
 
-    int getClosestPointIndex(float x) {
+    public int getClosestPointIndex(float x) {
         int result = Math.round((x - x0) / xStep);
         if (result < FIRST_DATE_INDEX) result = FIRST_DATE_INDEX;
         if (result > lastDateIndex) result = lastDateIndex;

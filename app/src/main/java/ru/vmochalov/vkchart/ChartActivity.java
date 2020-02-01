@@ -13,7 +13,7 @@ import java.io.IOException;
 
 import ru.vmochalov.vkchart.utils.JsonParsingUtil;
 import ru.vmochalov.vkchart.utils.RawResourcesUtil;
-import ru.vmochalov.vkchart.view.ChartView;
+import ru.vmochalov.vkchart.chart.view.ChartView;
 
 public class ChartActivity extends Activity {
 

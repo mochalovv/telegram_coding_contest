@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view.detailed;
+package ru.vmochalov.vkchart.chart.view.primary;
 
 import android.content.Context;
 import android.content.res.Resources;
@@ -10,12 +10,17 @@ import android.view.View;
 import java.util.List;
 
 import ru.vmochalov.vkchart.R;
-import ru.vmochalov.vkchart.chart.Chart;
+import ru.vmochalov.vkchart.chart.data.Chart;
+import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
+import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
+import ru.vmochalov.vkchart.chart.view.primary.delegates.BackgroundDrawDelegate;
+import ru.vmochalov.vkchart.chart.view.primary.delegates.HorizontalLabelsDrawDelegate;
+import ru.vmochalov.vkchart.chart.view.primary.delegates.VerticalAxisDrawDelegate;
 
 /**
  * Created by Vladimir Mochalov on 10.03.2019.
  */
-public class DetailedChartView extends View {
+public class PrimaryChartView extends View {
 
     private final int TOP_AXIS_MARGIN_PX = 40;
     private final int BOTTOM_AXIS_MARGIN_PX = 60;
@@ -43,20 +48,20 @@ public class DetailedChartView extends View {
         void onMovementDirectionChanged(boolean isHorizontal);
     }
 
-    public DetailedChartView(Context context) {
+    public PrimaryChartView(Context context) {
         super(context);
 
         init();
     }
 
-    public DetailedChartView(Context context, AttributeSet attributeSet) {
+    public PrimaryChartView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
 
         handleAttributeSet(attributeSet);
         init();
     }
 
-    public DetailedChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
+    public PrimaryChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
         super(context, attributeSet, defStyleAttr);
 
         handleAttributeSet(attributeSet);
@@ -64,21 +69,21 @@ public class DetailedChartView extends View {
     }
 
     private void handleAttributeSet(AttributeSet attributeSet) {
-        TypedArray attributes = getContext().obtainStyledAttributes(attributeSet, R.styleable.DetailedChartView);
+        TypedArray attributes = getContext().obtainStyledAttributes(attributeSet, R.styleable.PrimaryChartView);
         Resources resources = getContext().getResources();
 
         axisTextSize = attributes.getDimensionPixelSize(
-                R.styleable.DetailedChartView_axisTextSize,
+                R.styleable.PrimaryChartView_axisTextSize,
                 resources.getDimensionPixelSize(R.dimen.chartViewDefaultTextSize)
         );
 
         lineStrokeWidth = attributes.getDimensionPixelSize(
-                R.styleable.DetailedChartView_chartLineWidth,
+                R.styleable.PrimaryChartView_chartLineWidth,
                 resources.getDimensionPixelSize(R.dimen.chartViewDefaultLineStrokeWidth)
         );
 
         axisStrokeWidth = attributes.getDimensionPixelSize(
-                R.styleable.DetailedChartView_axisLineWidth,
+                R.styleable.PrimaryChartView_axisLineWidth,
                 resources.getDimensionPixelSize(R.dimen.chartViewDefaultAxisStrokeWidth)
         );
 
@@ -181,7 +186,7 @@ public class DetailedChartView extends View {
 
     public void setOnChartClickedListener(OnChartClickedListener listener) {
         setOnTouchListener(
-                new DetailedChartOnTouchListener(
+                new PrimaryChartOnTouchListener(
                         horizontalLabelsDrawDelegate,
                         chartDrawDelegate,
                         listener

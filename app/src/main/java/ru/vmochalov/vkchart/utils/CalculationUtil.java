@@ -8,7 +8,7 @@ import java.util.List;
  */
 public class CalculationUtil {
 
-    public static boolean isHorizontalMovement(float initialX, float initialY, float updatedX, float updatedY) {
+    public static boolean isHorizontalGesture(float initialX, float initialY, float updatedX, float updatedY) {
         if (initialX == updatedX) return false;
 
         double tg = (updatedY - initialY) / (updatedX - initialX);
