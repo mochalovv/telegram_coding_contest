@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view.navigation;
+package ru.vmochalov.vkchart.chart.view.secondary.delegates;
 
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -28,7 +28,7 @@ public class FrameDrawDelegate {
     private float frameStart;
     private float frameWidth;
 
-    FrameDrawDelegate(float frameStart, float frameWidth) {
+    public FrameDrawDelegate(float frameStart, float frameWidth) {
         this.frameStart = frameStart;
         this.frameWidth = frameWidth;
 
@@ -41,11 +41,9 @@ public class FrameDrawDelegate {
         duff.setStyle(Paint.Style.FILL_AND_STROKE);
         duff.setColor(passiveBackgroundColor);
         duff.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.OVERLAY));
-
-
     }
 
-    void drawFrame(Canvas canvas) {
+    public void drawFrame(Canvas canvas) {
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
@@ -53,13 +51,37 @@ public class FrameDrawDelegate {
         canvas.drawRect(0, 0, width, height, activeBackgroundPaint);
 
         // draw frame
-        canvas.drawRect(frameStart, 0, frameStart + frameWidth - 1, FRAME_VERTICAL_BORDER_WIDTH, framePaint);
-        canvas.drawRect(frameStart, height - FRAME_VERTICAL_BORDER_WIDTH, frameStart + frameWidth - 1, height, framePaint);
-        canvas.drawRect(frameStart, 0, frameStart + FRAME_HORIZONTAL_BORDER_WIDTH, height, framePaint);
-        canvas.drawRect(frameStart + frameWidth - 1 - FRAME_HORIZONTAL_BORDER_WIDTH, 0, frameStart + frameWidth - 1, height, framePaint);
+        canvas.drawRect(
+                frameStart,
+                0,
+                frameStart + frameWidth - 1,
+                FRAME_VERTICAL_BORDER_WIDTH,
+                framePaint
+        );
+        canvas.drawRect(
+                frameStart,
+                height - FRAME_VERTICAL_BORDER_WIDTH,
+                frameStart + frameWidth - 1,
+                height,
+                framePaint
+        );
+        canvas.drawRect(
+                frameStart,
+                0,
+                frameStart + FRAME_HORIZONTAL_BORDER_WIDTH,
+                height,
+                framePaint
+        );
+        canvas.drawRect(
+                frameStart + frameWidth - 1 - FRAME_HORIZONTAL_BORDER_WIDTH,
+                0,
+                frameStart + frameWidth - 1,
+                height,
+                framePaint
+        );
     }
 
-    void drawShadow(Canvas canvas) {
+    public void drawShadow(Canvas canvas) {
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
@@ -67,22 +89,22 @@ public class FrameDrawDelegate {
         canvas.drawRect((int) (frameStart + frameWidth), 0, width, height, duff);
     }
 
-    void onNightModeChanged(boolean nightModeOn) {
+    public void onNightModeChanged(boolean nightModeOn) {
         activeBackgroundPaint.setColor(nightModeOn ? activeBackgroundColorNightMode : activeBackgroundColor);
         framePaint.setColor(nightModeOn ? frameColorNightMode : frameColor);
         duff.setColor(nightModeOn ? passiveBackgroundColorNightMode : passiveBackgroundColor);
     }
 
-    void onFrameUpdated(float frameStart, float frameWidth) {
+    public void onFrameUpdated(float frameStart, float frameWidth) {
         this.frameStart = frameStart;
         this.frameWidth = frameWidth;
     }
 
-    float getFrameStart() {
+    public float getFrameStart() {
         return frameStart;
     }
 
-    float getFrameEnd() {
+    public float getFrameEnd() {
         return frameStart + frameWidth;
     }
 }

@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.view.detailed;
+package ru.vmochalov.vkchart.chart.view.common.delegates;
 
 import android.animation.ValueAnimator;
 import android.graphics.Canvas;
@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
+
 import static ru.vmochalov.vkchart.utils.CalculationUtil.getMaxValue;
 
 /**
@@ -18,7 +20,7 @@ public class ChartDrawDelegate {
     private final int ALPHA_ANIMATION_DURATION = 300;
     private final int LINES_HEIGHT_ANIMATION_DURATION = 500;
 
-    interface MaxVisibleValueListener {
+    public interface MaxVisibleValueListener {
         void onMaxVisibleValueChanged(int previousMaxValue, int newMaxValue);
     }
 
@@ -95,7 +97,7 @@ public class ChartDrawDelegate {
         this.height = height;
     }
 
-    void setSelectedPointIndex(int selectedPointIndex) {
+    public void setSelectedPointIndex(int selectedPointIndex) {
         this.selectedPointIndex = selectedPointIndex;
     }
 
@@ -103,7 +105,7 @@ public class ChartDrawDelegate {
         return lineVisibilities[lineIndex];
     }
 
-    boolean areLinesVisible() {
+    public boolean areLinesVisible() {
         for (boolean visibility : lineVisibilities) {
             if (visibility) {
                 return true;
@@ -205,7 +207,7 @@ public class ChartDrawDelegate {
         }
     }
 
-    void drawSelectedPoints(
+    public void drawSelectedPoints(
             Canvas canvas,
             Paint verticalAxisPaint,
             Paint backgroundPaint
@@ -298,7 +300,7 @@ public class ChartDrawDelegate {
         }
     }
 
-    List<Integer> getSelectedValues() {
+    public List<Integer> getSelectedValues() {
         List<Integer> visibleSelectedValues = new ArrayList<>();
 
         if (selectedPointIndex >= 0) {

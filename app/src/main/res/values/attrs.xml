@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="DetailedChartView">
+    <declare-styleable name="PrimaryChartView">
         <attr name="axisTextSize" format="dimension" />
         <attr name="axisLineWidth" format="dimension" />
         <attr name="chartLineWidth" format="dimension" />

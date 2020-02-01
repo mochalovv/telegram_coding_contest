@@ -1,15 +1,17 @@
-package ru.vmochalov.vkchart.view.navigation;
+package ru.vmochalov.vkchart.chart.view.secondary;
 
 import android.content.Context;
 import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 
-import ru.vmochalov.vkchart.chart.Chart;
-import ru.vmochalov.vkchart.view.detailed.ChartDrawDelegate;
-import ru.vmochalov.vkchart.view.detailed.RedrawCallback;
+import ru.vmochalov.vkchart.chart.data.Chart;
+import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
+import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
+import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
+import ru.vmochalov.vkchart.chart.view.secondary.delegates.FrameDrawDelegate;
 
-public class ChartNavigationView extends View {
+public class SecondaryChartView extends View {
 
     private static final float INITIAL_FRAME_START_POSITION_PX = 0;
     private static final float INITIAL_FRAME_WIDTH_PX = 300;
@@ -28,7 +30,7 @@ public class ChartNavigationView extends View {
         void onFrameUpdated(float start, float width);
     }
 
-    private ChartNavigationTouchListener chartNavigationTouchListener = new ChartNavigationTouchListener(
+    private SecondaryChartOnTouchListener secondaryChartOnTouchListener = new SecondaryChartOnTouchListener(
             INITIAL_FRAME_START_POSITION_PX,
             INITIAL_FRAME_WIDTH_PX,
             new FrameUpdatedListener() {
@@ -39,21 +41,21 @@ public class ChartNavigationView extends View {
             }
     );
 
-    public ChartNavigationView(Context context) {
+    public SecondaryChartView(Context context) {
         super(context);
         initTouchListener();
 
         initVariableForDrawing();
     }
 
-    public ChartNavigationView(Context context, AttributeSet attributeSet) {
+    public SecondaryChartView(Context context, AttributeSet attributeSet) {
         super(context, attributeSet);
         initTouchListener();
 
         initVariableForDrawing();
     }
 
-    public ChartNavigationView(Context context, AttributeSet attributeSet, int defStyleAttr) {
+    public SecondaryChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
         super(context, attributeSet, defStyleAttr);
         initTouchListener();
 
@@ -61,7 +63,7 @@ public class ChartNavigationView extends View {
     }
 
     private void initTouchListener() {
-        setOnTouchListener(chartNavigationTouchListener);
+        setOnTouchListener(secondaryChartOnTouchListener);
     }
 
     private boolean initialValueIsSent = false;
@@ -128,7 +130,7 @@ public class ChartNavigationView extends View {
     private void updateHorizontalDrawingParams() {
         if (chart != null && getWidth() > 0 && getHeight() > 0) {
             int pointsCount = chart.getAbscissa().size() - 1;
-            float xStep = getWidth() / pointsCount;
+            float xStep = (float) getWidth() / pointsCount;
 
             chartDrawDelegate.onDrawingParamsChanged(
                     0,
@@ -165,7 +167,7 @@ public class ChartNavigationView extends View {
 
     public void setPeriodChangedListener(PeriodChangedListener listener) {
         periodChangedListener = listener;
-        chartNavigationTouchListener.setPeriodChangedListener(listener);
+        secondaryChartOnTouchListener.setPeriodChangedListener(listener);
     }
 
     public void onNightModeChanged(boolean nightModeOn) {

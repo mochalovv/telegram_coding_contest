@@ -1,4 +1,4 @@
-package ru.vmochalov.vkchart.chart;
+package ru.vmochalov.vkchart.chart.data;
 
 import android.graphics.Color;
 

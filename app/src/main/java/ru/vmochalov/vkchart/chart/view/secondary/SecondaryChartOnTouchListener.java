@@ -1,14 +1,16 @@
-package ru.vmochalov.vkchart.view.navigation;
+package ru.vmochalov.vkchart.chart.view.secondary;
 
 import android.view.MotionEvent;
 import android.view.View;
 
-import static ru.vmochalov.vkchart.utils.CalculationUtil.isHorizontalMovement;
+import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
+
+import static ru.vmochalov.vkchart.utils.CalculationUtil.isHorizontalGesture;
 
 /**
  * Created by Vladimir Mochalov on 18.01.2020.
  */
-public class ChartNavigationTouchListener implements View.OnTouchListener {
+public class SecondaryChartOnTouchListener implements View.OnTouchListener {
 
     private static final float BORDER_TOUCH_AREA_PX = 30;
     private static final float MIN_FRAME_WIDTH_PX = 40;
@@ -31,12 +33,12 @@ public class ChartNavigationTouchListener implements View.OnTouchListener {
     private float frameWidth;
 
     private PeriodChangedListener periodChangedListener;
-    private ChartNavigationView.FrameUpdatedListener frameUpdatedListener;
+    private SecondaryChartView.FrameUpdatedListener frameUpdatedListener;
 
-    public ChartNavigationTouchListener(
+    public SecondaryChartOnTouchListener(
             float frameStart,
             float frameWidth,
-            ChartNavigationView.FrameUpdatedListener frameUpdatedListener
+            SecondaryChartView.FrameUpdatedListener frameUpdatedListener
     ) {
         this.frameStart = frameStart;
         this.frameWidth = frameWidth;
@@ -137,7 +139,7 @@ public class ChartNavigationTouchListener implements View.OnTouchListener {
         if (periodChangedListener != null & deltaX != 0 && touchType != TouchType.UNHANDLED_TOUCH) {
             periodChangedListener.onPeriodChangedMoved(frameStartInPercent, frameEndInPercent);
         }
-        boolean isHorizontal = isHorizontalMovement(initialTouchX, initialTouchY, x, y);
+        boolean isHorizontal = isHorizontalGesture(initialTouchX, initialTouchY, x, y);
 
         if (isHorizontal != isDragHorizontal) {
             isDragHorizontal = isHorizontal;

@@ -1,12 +1,15 @@
-package ru.vmochalov.vkchart.view.detailed;
+package ru.vmochalov.vkchart.chart.view.primary;
 
 import android.view.MotionEvent;
 import android.view.View;
 
+import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
+import ru.vmochalov.vkchart.chart.view.primary.delegates.HorizontalLabelsDrawDelegate;
+
 /**
  * Created by Vladimir Mochalov on 25.01.2020.
  */
-public class DetailedChartOnTouchListener implements View.OnTouchListener {
+public class PrimaryChartOnTouchListener implements View.OnTouchListener {
 
     private float initialX;
     private float initialY;
@@ -15,12 +18,12 @@ public class DetailedChartOnTouchListener implements View.OnTouchListener {
 
     private HorizontalLabelsDrawDelegate horizontalLabelsDrawDelegate;
     private ChartDrawDelegate chartDrawDelegate;
-    private DetailedChartView.OnChartClickedListener onChartClickedListener;
+    private PrimaryChartView.OnChartClickedListener onChartClickedListener;
 
-    DetailedChartOnTouchListener(
+    PrimaryChartOnTouchListener(
             HorizontalLabelsDrawDelegate horizontalLabelsDrawDelegate,
             ChartDrawDelegate chartDrawDelegate,
-            DetailedChartView.OnChartClickedListener onChartClickedListener
+            PrimaryChartView.OnChartClickedListener onChartClickedListener
     ) {
         this.horizontalLabelsDrawDelegate = horizontalLabelsDrawDelegate;
         this.chartDrawDelegate = chartDrawDelegate;
