@@ -31,7 +31,7 @@ https://t.me/contest/7 :
 <img src="/docs/design_implemented.png">
 
 #### App Animation
-<img src="/docs/animation_implemented.png">
+<img src="/docs/animation_implemented.gif">
 
 #### Feedback from Judges:
 > Fast app, working smoothly even on older devices. Unfortunately, it doesn't fully comply with the design guidelines provided for the contest.
