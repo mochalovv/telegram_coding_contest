@@ -1,5 +1,5 @@
 ### Intro
-This project took part in Telegram Contest in March, 2019.
+This project took part in the Telegram Contest in March, 2019.
 
 ### Initial Task
 https://t.me/contest/6 :
@@ -14,7 +14,7 @@ https://t.me/contest/6 :
 #### Design
 https://t.me/contest/10 :
 
-<img src="/docs/chart_example.png">
+<img src="/docs/design_provided.png">
 
 #### Animation
 https://t.me/contest/7 :
@@ -22,7 +22,19 @@ https://t.me/contest/7 :
 <img src="/docs/animation_provided.gif">
 
 ### Result
-Some Lorem Ipsum
+* The app won the 3rd prize on the contest! B)
+* The size of the submitted apk is 38011 bytes. 
+* The app uses Android Framework libarary only. `Build.gradle` file has no dependencies at all.
+* The app satisfies the Android preferred requirement of having [60 fps](https://www.youtube.com/watch?v=CaMTIgxCSqU) when performing animations.
 
+#### App Screenshot
+<img src="/docs/design_implemented.png">
 
+#### App Animation
+<img src="/docs/animation_implemented.gif">
 
+#### Feedback from Judges:
+> Fast app, working smoothly even on older devices. Unfortunately, it doesn't fully comply with the design guidelines provided for the contest.
+
+### To Sum Up
+I'd like to thank Telegram for organizing such great contests. They allow developers to show off their coding skills as well as to acquire knowledge in areas which might be new for someone.
