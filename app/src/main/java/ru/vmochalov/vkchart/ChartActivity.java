@@ -9,8 +9,11 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
+import org.json.JSONException;
+
 import java.io.IOException;
 
+import ru.vmochalov.vkchart.chart.data.Chart;
 import ru.vmochalov.vkchart.chart.view.ChartView;
 import ru.vmochalov.vkchart.chart.view.common.GestureDirectionListener;
 import ru.vmochalov.vkchart.utils.JsonParsingUtil;
@@ -60,19 +63,27 @@ public class ChartActivity extends Activity {
             String chartsInput = RawResourcesUtil.getRawResourceAsString(getResources(), R.raw.charts_input);
 
             for (String json : JsonParsingUtil.getRawJsonObjectSources(chartsInput)) {
-                ChartView chartView = new ChartView(this);
-                chartView.setChartData(json);
-                chartView.setGestureDirectionListener(new GestureDirectionListener() {
-                    @Override
-                    public void onGestureDirectionChanged(boolean isHorizontalMovement) {
-                        scrollView.requestDisallowInterceptTouchEvent(isHorizontalMovement);
-                    }
-                });
-                chartContainer.addView(chartView);
+                chartContainer.addView(createChartView(Chart.fromJson(json)));
             }
+
         } catch (IOException ex) {
             Log.e(this.getClass().getName(), "Error while reading charts input: " + ex.getMessage());
+        } catch (JSONException ex) {
+            Log.e(this.getClass().getName(), "Error while parsing charts input: " + ex.getMessage());
         }
+    }
+
+    private ChartView createChartView(Chart chart) {
+        ChartView chartView = new ChartView(this);
+        chartView.setChart(chart);
+        chartView.setGestureDirectionListener(new GestureDirectionListener() {
+            @Override
+            public void onGestureDirectionChanged(boolean isHorizontalMovement) {
+                scrollView.requestDisallowInterceptTouchEvent(isHorizontalMovement);
+            }
+        });
+
+        return chartView;
     }
 
     private void onNightModeChanged(boolean nightModeOn) {

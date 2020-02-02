@@ -10,8 +10,6 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 
-import org.json.JSONException;
-
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.data.Chart;
 import ru.vmochalov.vkchart.chart.view.common.GestureDirectionListener;
@@ -105,19 +103,15 @@ public class ChartView extends LinearLayout {
         secondaryChartView.setOnRangeChangedListener(onRangeChangedListener);
     }
 
-    public void setChartData(String jsonSource) {
-        Chart chart = parseChartFromJson(jsonSource);
+    public void setChart(Chart chart) {
+        primaryChartView.setChart(chart);
+        secondaryChartView.setChart(chart);
+        selectedPointInfoView.setChart(chart);
 
-        if (chart != null) {
-            primaryChartView.setChart(chart);
-            secondaryChartView.setChart(chart);
-            selectedPointInfoView.setChart(chart);
+        primaryChartView.setOnChartClickedListener(onChartClickedListener);
 
-            primaryChartView.setOnChartClickedListener(onChartClickedListener);
-
-            for (int i = 0; i < chart.getLineIds().size(); i++) {
-                addView(createCheckBoxForLine(chart, i));
-            }
+        for (int i = 0; i < chart.getLineIds().size(); i++) {
+            addView(createCheckBoxForLine(chart, i));
         }
     }
 
@@ -169,13 +163,4 @@ public class ChartView extends LinearLayout {
         this.gestureDirectionListener = listener;
     }
 
-    private Chart parseChartFromJson(String jsonSource) {
-        try {
-            return Chart.fromJson(jsonSource);
-        } catch (JSONException ex) {
-            //do nothing
-        }
-
-        return null;
-    }
 }
