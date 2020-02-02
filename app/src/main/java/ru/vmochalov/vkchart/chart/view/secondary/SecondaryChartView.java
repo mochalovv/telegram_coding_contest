@@ -6,7 +6,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import ru.vmochalov.vkchart.chart.data.Chart;
-import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
+import ru.vmochalov.vkchart.chart.view.common.OnRangeChangedListener;
 import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
 import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.secondary.delegates.FrameDrawDelegate;
@@ -21,7 +21,7 @@ public class SecondaryChartView extends View {
 
     private Chart chart;
 
-    private PeriodChangedListener periodChangedListener;
+    private OnRangeChangedListener onRangeChangedListener;
 
     private ChartDrawDelegate chartDrawDelegate;
     private FrameDrawDelegate frameDrawDelegate;
@@ -75,11 +75,11 @@ public class SecondaryChartView extends View {
         int height = bottom - top;
 
         if (!initialValueIsSent) {
-            if (periodChangedListener != null) {
+            if (onRangeChangedListener != null) {
                 double frameStartInPercent = frameDrawDelegate.getFrameStart() / width;
                 double frameEndInPercent = (frameDrawDelegate.getFrameEnd()) / width;
 
-                periodChangedListener.onPeriodChangedMoved(frameStartInPercent, frameEndInPercent);
+                onRangeChangedListener.onVisibleRangeChanged(frameStartInPercent, frameEndInPercent);
 
                 initialValueIsSent = true;
             }
@@ -166,9 +166,9 @@ public class SecondaryChartView extends View {
         }
     }
 
-    public void setPeriodChangedListener(PeriodChangedListener listener) {
-        periodChangedListener = listener;
-        secondaryChartOnTouchListener.setPeriodChangedListener(listener);
+    public void setOnRangeChangedListener(OnRangeChangedListener listener) {
+        onRangeChangedListener = listener;
+        secondaryChartOnTouchListener.setOnRangeChangedListener(listener);
     }
 
     public void onNightModeChanged(boolean nightModeOn) {

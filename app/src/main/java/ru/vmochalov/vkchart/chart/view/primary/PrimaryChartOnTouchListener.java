@@ -3,6 +3,7 @@ package ru.vmochalov.vkchart.chart.view.primary;
 import android.view.MotionEvent;
 import android.view.View;
 
+import ru.vmochalov.vkchart.chart.view.common.OnChartClickedListener;
 import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.primary.delegates.HorizontalLabelsDrawDelegate;
 
@@ -14,16 +15,16 @@ public class PrimaryChartOnTouchListener implements View.OnTouchListener {
     private float initialX;
     private float initialY;
 
-    private boolean isHorizontalMovement;
+    private boolean isHorizontalGesture;
 
     private HorizontalLabelsDrawDelegate horizontalLabelsDrawDelegate;
     private ChartDrawDelegate chartDrawDelegate;
-    private PrimaryChartView.OnChartClickedListener onChartClickedListener;
+    private OnChartClickedListener onChartClickedListener;
 
     PrimaryChartOnTouchListener(
             HorizontalLabelsDrawDelegate horizontalLabelsDrawDelegate,
             ChartDrawDelegate chartDrawDelegate,
-            PrimaryChartView.OnChartClickedListener onChartClickedListener
+            OnChartClickedListener onChartClickedListener
     ) {
         this.horizontalLabelsDrawDelegate = horizontalLabelsDrawDelegate;
         this.chartDrawDelegate = chartDrawDelegate;
@@ -43,15 +44,15 @@ public class PrimaryChartOnTouchListener implements View.OnTouchListener {
             onChartClickedListener.onTouch(
                     event.getX(),
                     selectedPointIndex,
-                    chartDrawDelegate.getSelectedValues()
+                    chartDrawDelegate.areLinesVisible()
             );
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             chartDrawDelegate.setSelectedPointIndex(-1);
 
-            isHorizontalMovement = false;
+            isHorizontalGesture = false;
 
             onChartClickedListener.onButtonUp();
-            onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
+            onChartClickedListener.onGestureDirectionChanged(isHorizontalGesture);
 
         } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
             int lastSelectedPointIndex = horizontalLabelsDrawDelegate.getClosestPointIndex(event.getX());
@@ -60,23 +61,23 @@ public class PrimaryChartOnTouchListener implements View.OnTouchListener {
 
             boolean isHorizontal = isHorizontalMovement(event.getX(), event.getY());
 
-            if (isHorizontal != isHorizontalMovement) {
-                isHorizontalMovement = isHorizontal;
+            if (isHorizontal != isHorizontalGesture) {
+                isHorizontalGesture = isHorizontal;
 
-                onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
+                onChartClickedListener.onGestureDirectionChanged(isHorizontalGesture);
             }
 
             onChartClickedListener.onTouch(
                     event.getX(),
                     lastSelectedPointIndex,
-                    chartDrawDelegate.getSelectedValues()
+                    chartDrawDelegate.areLinesVisible()
             );
 
         } else {
-            isHorizontalMovement = false;
+            isHorizontalGesture = false;
             chartDrawDelegate.setSelectedPointIndex(-1);
 
-            onChartClickedListener.onMovementDirectionChanged(isHorizontalMovement);
+            onChartClickedListener.onGestureDirectionChanged(isHorizontalGesture);
         }
 
         chartView.invalidate();

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/chartContainer"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="16dp">
+
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:orientation="vertical"
+    tools:padding="16dp"
+    tools:parentTag="android.widget.LinearLayout">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -15,37 +15,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
-        <LinearLayout
-            android:id="@+id/infoView"
+        <ru.vmochalov.vkchart.chart.view.SelectedPointInfoView
+            android:id="@+id/selectedPointInfoView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center|top"
-            android:layout_marginTop="16dp"
-            android:background="@color/lightThemeChartBackground"
+            android:layout_marginTop="8dp"
             android:elevation="2dp"
-            android:orientation="vertical"
-            android:padding="8dp"
-            android:visibility="gone">
-
-            <TextView
-                android:id="@+id/dateView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@android:color/black"
-                android:textSize="12sp" />
-
-            <LinearLayout
-                android:id="@+id/values"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-
-            <LinearLayout
-                android:id="@+id/chartNames"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal" />
-        </LinearLayout>
+            android:visibility="gone" />
 
     </FrameLayout>
 
@@ -56,4 +32,4 @@
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp" />
 
-</LinearLayout>
+</merge>

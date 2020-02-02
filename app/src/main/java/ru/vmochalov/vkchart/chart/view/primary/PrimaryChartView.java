@@ -7,12 +7,11 @@ import android.graphics.Canvas;
 import android.util.AttributeSet;
 import android.view.View;
 
-import java.util.List;
-
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.data.Chart;
-import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
+import ru.vmochalov.vkchart.chart.view.common.OnChartClickedListener;
 import ru.vmochalov.vkchart.chart.view.common.RedrawCallback;
+import ru.vmochalov.vkchart.chart.view.common.delegates.ChartDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.primary.delegates.BackgroundDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.primary.delegates.HorizontalLabelsDrawDelegate;
 import ru.vmochalov.vkchart.chart.view.primary.delegates.VerticalAxisDrawDelegate;
@@ -39,14 +38,6 @@ public class PrimaryChartView extends View {
     private VerticalAxisDrawDelegate verticalAxisDrawDelegate;
     private HorizontalLabelsDrawDelegate horizontalLabelsDrawDelegate;
     private ChartDrawDelegate chartDrawDelegate;
-
-    public interface OnChartClickedListener {
-        void onTouch(float x, int pointIndex, List<Integer> values);
-
-        void onButtonUp();
-
-        void onMovementDirectionChanged(boolean isHorizontal);
-    }
 
     public PrimaryChartView(Context context) {
         super(context);

@@ -5,4 +5,6 @@
     <dimen name="chartViewDefaultLineStrokeWidth">2dp</dimen>
 
     <dimen name="chartNavigationViewHeight">48dp</dimen>
+
+    <dimen name="chartPadding">16dp</dimen>
 </resources>

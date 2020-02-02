@@ -3,28 +3,22 @@ package ru.vmochalov.vkchart.chart.view;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 
 import org.json.JSONException;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import ru.vmochalov.vkchart.R;
 import ru.vmochalov.vkchart.chart.data.Chart;
+import ru.vmochalov.vkchart.chart.view.common.GestureDirectionListener;
+import ru.vmochalov.vkchart.chart.view.common.OnChartClickedListener;
+import ru.vmochalov.vkchart.chart.view.common.OnRangeChangedListener;
 import ru.vmochalov.vkchart.chart.view.primary.PrimaryChartView;
-import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
 import ru.vmochalov.vkchart.chart.view.secondary.SecondaryChartView;
-
-import static android.util.TypedValue.COMPLEX_UNIT_SP;
 
 /**
  * Created by Vladimir Mochalov on 17.03.2019.
@@ -33,25 +27,52 @@ public class ChartView extends LinearLayout {
 
     private PrimaryChartView primaryChartView;
     private SecondaryChartView secondaryChartView;
-    private LinearLayout chartContainer;
+    private SelectedPointInfoView selectedPointInfoView;
 
-    private View infoView;
-    private TextView dateView;
-    private LinearLayout valuesView;
-    private LinearLayout namesView;
+    private GestureDirectionListener gestureDirectionListener;
 
-    private List<TextView> valueViews = new ArrayList<>();
-    private List<TextView> nameViews = new ArrayList<>();
+    private OnRangeChangedListener onRangeChangedListener = new OnRangeChangedListener() {
+        @Override
+        public void onVisibleRangeChanged(double periodStart, double periodEnd) {
+            primaryChartView.onVisibleRangeChanged(periodStart, periodEnd);
+        }
 
-    public interface MovementDirectionListener {
-        void onMovementDirectionChanged(boolean isHorizontalMovement);
-    }
+        @Override
+        public void onDragDirectionChanged(boolean horizontal) {
+            if (gestureDirectionListener != null) {
+                gestureDirectionListener.onGestureDirectionChanged(horizontal);
+            }
+        }
+    };
 
-    private MovementDirectionListener listener;
+    private OnChartClickedListener onChartClickedListener = new OnChartClickedListener() {
 
-    public void setMovementDirectionListener(MovementDirectionListener listener) {
-        this.listener = listener;
-    }
+        @Override
+        public void onTouch(float x, int pointIndex, boolean areLinesVisible) {
+            selectedPointInfoView.onSelectedPointChanged(pointIndex);
+
+            if (areLinesVisible) {
+                selectedPointInfoView.onTouch(x, primaryChartView.getWidth());
+                selectedPointInfoView.setVisibility(View.VISIBLE);
+            }
+        }
+
+        @Override
+        public void onButtonUp() {
+            selectedPointInfoView.setVisibility(View.GONE);
+        }
+
+        @Override
+        public void onGestureDirectionChanged(boolean isHorizontal) {
+            if (gestureDirectionListener != null) {
+                gestureDirectionListener.onGestureDirectionChanged(isHorizontal);
+            }
+
+            if (!isHorizontal) {
+                selectedPointInfoView.setVisibility(View.GONE);
+            }
+        }
+    };
 
     public ChartView(Context context) {
         super(context);
@@ -65,202 +86,87 @@ public class ChartView extends LinearLayout {
         initView();
     }
 
-    public ChartView(Context context, AttributeSet attributeSet, int defStyleAttr) {
-        super(context, attributeSet, defStyleAttr);
-
-        initView();
-    }
-
-    public ChartView(Context context, AttributeSet attributeSet, int defStyleAttr, int defStyleRes) {
-        super(context, attributeSet, defStyleAttr, defStyleRes);
-
-        initView();
-    }
-
     private void initView() {
-        inflateView();
-        initInnerViews();
+        LayoutInflater.from(getContext()).inflate(R.layout.layout_chart_view, this);
+
+        setOrientation(VERTICAL);
+
+        int padding = getResources().getDimensionPixelSize(R.dimen.chartPadding);
+        setPadding(padding, padding, padding, padding);
+
+        onViewInflated();
     }
 
-    private void inflateView() {
-        LayoutInflater layoutInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        layoutInflater.inflate(R.layout.layout_chart_view, this, true);
-    }
-
-    private void initInnerViews() {
+    private void onViewInflated() {
         primaryChartView = findViewById(R.id.chart);
         secondaryChartView = findViewById(R.id.chartNavigation);
-        chartContainer = findViewById(R.id.chartContainer);
-        infoView = findViewById(R.id.infoView);
-        dateView = findViewById(R.id.dateView);
-        valuesView = findViewById(R.id.values);
-        namesView = findViewById(R.id.chartNames);
+        selectedPointInfoView = findViewById(R.id.selectedPointInfoView);
 
-        secondaryChartView.setPeriodChangedListener(
-                new PeriodChangedListener() {
-                    @Override
-                    public void onPeriodChangedMoved(double periodStart, double periodEnd) {
-                        primaryChartView.onVisibleRangeChanged(periodStart, periodEnd);
-                    }
-
-                    @Override
-                    public void onPeriodModifyFinished() {
-                    }
-
-                    @Override
-                    public void onDragDirectionChanged(boolean horizontal) {
-                        if (listener != null) {
-                            listener.onMovementDirectionChanged(horizontal);
-                        }
-                    }
-                }
-        );
+        secondaryChartView.setOnRangeChangedListener(onRangeChangedListener);
     }
 
-    private Chart chart;
-    private boolean[] visibility;
-
     public void setChartData(String jsonSource) {
-        chart = parseChartFromJson(jsonSource);
+        Chart chart = parseChartFromJson(jsonSource);
 
         if (chart != null) {
             primaryChartView.setChart(chart);
             secondaryChartView.setChart(chart);
+            selectedPointInfoView.setChart(chart);
 
-            final List<String> lineIds = chart.getLineIds();
-            List<String> lineLabels = chart.getLabels();
-            List<Integer> colors = chart.getColors();
-            visibility = new boolean[lineIds.size()];
-            Arrays.fill(visibility, true);
+            primaryChartView.setOnChartClickedListener(onChartClickedListener);
 
-            for (int i = 0; i < lineIds.size(); i++) {
-                String tag = lineIds.get(i);
-
-                CheckBox checkBox = new CheckBox(getContext());
-                checkBox.setText(lineLabels.get(i));
-                checkBox.setTag(tag);
-                checkBox.setButtonTintList(
-                        ColorStateList.valueOf(colors.get(i))
-                );
-                checkBox.setChecked(true);
-                final int index = i;
-                checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                    @Override
-                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                        String lineId = buttonView.getTag().toString();
-
-                        primaryChartView.setLineVisibility(lineId, isChecked);
-                        secondaryChartView.setLineVisibility(lineId, isChecked);
-
-                        visibility[index] = isChecked;
-
-                        infoView.findViewWithTag(lineId).setVisibility(isChecked ? View.VISIBLE : View.GONE);
-                        namesView.findViewWithTag(lineId).setVisibility(isChecked ? View.VISIBLE : View.GONE);
-                    }
-                });
-
-                chartContainer.addView(checkBox);
-
-                TextView valueTextView = new TextView(getContext());
-                valueTextView.setTag(tag);
-                valueTextView.setTextSize(COMPLEX_UNIT_SP, 14);
-                valueTextView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-                valueTextView.setTextColor(colors.get(i));
-
-                valuesView.addView(valueTextView);
-
-                valueViews.add(valueTextView);
-
-                LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) valueTextView.getLayoutParams();
-                params.weight = 1;
-                params.rightMargin = 16;
-
-                TextView nameTextView = new TextView(getContext());
-                nameTextView.setTag(tag);
-                nameTextView.setTextColor(colors.get(i));
-                nameTextView.setText(tag);
-                nameTextView.setTextSize(COMPLEX_UNIT_SP, 12);
-                namesView.addView(nameTextView);
-
-                nameViews.add(nameTextView);
-
-                params = (LinearLayout.LayoutParams) nameTextView.getLayoutParams();
-                params.weight = 1;
-
+            for (int i = 0; i < chart.getLineIds().size(); i++) {
+                addView(createCheckBoxForLine(chart, i));
             }
-
-            primaryChartView.setOnChartClickedListener(new PrimaryChartView.OnChartClickedListener() {
-
-                @Override
-                public void onTouch(float x, int pointIndex, List<Integer> values) {
-                    updateInfo(pointIndex);
-                    if (!values.isEmpty()) {
-                        updateInfoViewX(x);
-                        infoView.setVisibility(View.VISIBLE);
-                    }
-                }
-
-                @Override
-                public void onButtonUp() {
-                    infoView.setVisibility(View.GONE);
-                }
-
-                @Override
-                public void onMovementDirectionChanged(boolean isHorizontal) {
-                    if (listener != null) {
-                        listener.onMovementDirectionChanged(isHorizontal);
-                    }
-
-                    if (!isHorizontal) {
-                        infoView.setVisibility(View.GONE);
-                    }
-                }
-
-                private void updateInfo(int pointIndex) {
-                    dateView.setText((chart.getAbscissaAsLongString().get(pointIndex)));
-
-                    for (int i = 0; i < visibility.length; i++) {
-
-                        if (visibility[i]) {
-                            valueViews.get(i).setText(chart.getOrdinates().get(i).get(pointIndex).toString());
-                        }
-                    }
-                }
-
-                float newX;
-                int infoWidthGap = infoView.getWidth() / 2 + 30;
-
-                private void updateInfoViewX(float x) {
-
-                    newX = x + infoWidthGap;
-
-                    if ((newX + infoView.getWidth()) > primaryChartView.getWidth()) {
-                        newX = primaryChartView.getWidth() - infoView.getWidth();
-                    }
-
-                    infoView.setX(newX);
-
-                }
-            });
         }
     }
 
-    public void setNightMode(boolean nightModeOn) {
+    private CheckBox createCheckBoxForLine(Chart chart, final int lineIndex) {
+        String lineId = chart.getLineIds().get(lineIndex);
+        String lineLabel = chart.getLabels().get(lineIndex);
+        int color = chart.getColors().get(lineIndex);
+
+        CheckBox checkBox = new CheckBox(getContext());
+        checkBox.setText(lineLabel);
+        checkBox.setTag(lineId);
+        checkBox.setButtonTintList(ColorStateList.valueOf(color));
+        checkBox.setChecked(true);
+
+        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                String lineId = buttonView.getTag().toString();
+
+                primaryChartView.setLineVisibility(lineId, isChecked);
+                secondaryChartView.setLineVisibility(lineId, isChecked);
+                selectedPointInfoView.onLineVisiblityChanged(lineId, isChecked);
+            }
+        });
+
+        return checkBox;
+    }
+
+    public void onNightModeChanged(boolean nightModeOn) {
         primaryChartView.onNightModeChanged(nightModeOn);
         secondaryChartView.onNightModeChanged(nightModeOn);
+        selectedPointInfoView.onNightModeChanged(nightModeOn);
 
-        int backgroundColor = getResources().getColor(nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground);
-        setBackgroundColor(backgroundColor);
+        setBackgroundColor(
+                getResources().getColor(
+                        nightModeOn ? R.color.darkThemeChartBackground : R.color.lightThemeChartBackground
+                )
+        );
 
-        for (int i = 0; i < chartContainer.getChildCount(); i++) {
-            View view = chartContainer.getChildAt(i);
+        for (int i = 0; i < getChildCount(); i++) {
+            View view = getChildAt(i);
             if (view instanceof CheckBox) {
                 ((CheckBox) view).setTextColor(nightModeOn ? Color.WHITE : Color.BLACK);
             }
         }
+    }
 
-        infoView.setBackgroundColor(backgroundColor);
-        dateView.setTextColor(getResources().getColor(nightModeOn ? android.R.color.white : android.R.color.black));
+    public void setGestureDirectionListener(GestureDirectionListener listener) {
+        this.gestureDirectionListener = listener;
     }
 
     private Chart parseChartFromJson(String jsonSource) {

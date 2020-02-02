@@ -11,9 +11,10 @@ import android.widget.ScrollView;
 
 import java.io.IOException;
 
+import ru.vmochalov.vkchart.chart.view.ChartView;
+import ru.vmochalov.vkchart.chart.view.common.GestureDirectionListener;
 import ru.vmochalov.vkchart.utils.JsonParsingUtil;
 import ru.vmochalov.vkchart.utils.RawResourcesUtil;
-import ru.vmochalov.vkchart.chart.view.ChartView;
 
 public class ChartActivity extends Activity {
 
@@ -61,9 +62,9 @@ public class ChartActivity extends Activity {
             for (String json : JsonParsingUtil.getRawJsonObjectSources(chartsInput)) {
                 ChartView chartView = new ChartView(this);
                 chartView.setChartData(json);
-                chartView.setMovementDirectionListener(new ChartView.MovementDirectionListener() {
+                chartView.setGestureDirectionListener(new GestureDirectionListener() {
                     @Override
-                    public void onMovementDirectionChanged(boolean isHorizontalMovement) {
+                    public void onGestureDirectionChanged(boolean isHorizontalMovement) {
                         scrollView.requestDisallowInterceptTouchEvent(isHorizontalMovement);
                     }
                 });
@@ -78,7 +79,7 @@ public class ChartActivity extends Activity {
         for (int i = 0; i < chartContainer.getChildCount(); i++) {
             View child = chartContainer.getChildAt(i);
             if (child instanceof ChartView) {
-                ((ChartView) child).setNightMode(nightModeOn);
+                ((ChartView) child).onNightModeChanged(nightModeOn);
             }
         }
 

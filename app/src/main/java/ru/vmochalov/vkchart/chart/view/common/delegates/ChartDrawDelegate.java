@@ -300,18 +300,4 @@ public class ChartDrawDelegate {
         }
     }
 
-    public List<Integer> getSelectedValues() {
-        List<Integer> visibleSelectedValues = new ArrayList<>();
-
-        if (selectedPointIndex >= 0) {
-            for (int i = 0; i < linesCount; i++) {
-                if (isLineVisible(i)) {
-                    visibleSelectedValues.add(chartOrdinates.get(i).get(selectedPointIndex));
-                }
-            }
-        }
-
-        return visibleSelectedValues;
-    }
-
 }

@@ -3,7 +3,7 @@ package ru.vmochalov.vkchart.chart.view.secondary;
 import android.view.MotionEvent;
 import android.view.View;
 
-import ru.vmochalov.vkchart.chart.view.common.PeriodChangedListener;
+import ru.vmochalov.vkchart.chart.view.common.OnRangeChangedListener;
 
 import static ru.vmochalov.vkchart.utils.CalculationUtil.isHorizontalGesture;
 
@@ -32,7 +32,7 @@ public class SecondaryChartOnTouchListener implements View.OnTouchListener {
     private float frameStart;
     private float frameWidth;
 
-    private PeriodChangedListener periodChangedListener;
+    private OnRangeChangedListener onRangeChangedListener;
     private SecondaryChartView.FrameUpdatedListener frameUpdatedListener;
 
     public SecondaryChartOnTouchListener(
@@ -45,8 +45,8 @@ public class SecondaryChartOnTouchListener implements View.OnTouchListener {
         this.frameUpdatedListener = frameUpdatedListener;
     }
 
-    public void setPeriodChangedListener(PeriodChangedListener listener) {
-        periodChangedListener = listener;
+    public void setOnRangeChangedListener(OnRangeChangedListener listener) {
+        onRangeChangedListener = listener;
     }
 
     @Override
@@ -85,8 +85,8 @@ public class SecondaryChartOnTouchListener implements View.OnTouchListener {
         } else {
             isDragHorizontal = false;
 
-            if (periodChangedListener != null) {
-                periodChangedListener.onDragDirectionChanged(isDragHorizontal);
+            if (onRangeChangedListener != null) {
+                onRangeChangedListener.onDragDirectionChanged(isDragHorizontal);
             }
 
             return false;
@@ -115,10 +115,9 @@ public class SecondaryChartOnTouchListener implements View.OnTouchListener {
         if ((touchType == TouchType.LEFT_BORDER_TOUCH ||
                 touchType == TouchType.FRAME_TOUCH ||
                 touchType == TouchType.RIGHT_BORDER_TOUCH) &&
-                periodChangedListener != null
+                onRangeChangedListener != null
         ) {
-            periodChangedListener.onPeriodModifyFinished();
-            periodChangedListener.onDragDirectionChanged(isDragHorizontal);
+            onRangeChangedListener.onDragDirectionChanged(isDragHorizontal);
         }
 
         touchType = null;
@@ -136,14 +135,14 @@ public class SecondaryChartOnTouchListener implements View.OnTouchListener {
             frameEndInPercent = 1;
         }
 
-        if (periodChangedListener != null & deltaX != 0 && touchType != TouchType.UNHANDLED_TOUCH) {
-            periodChangedListener.onPeriodChangedMoved(frameStartInPercent, frameEndInPercent);
+        if (onRangeChangedListener != null & deltaX != 0 && touchType != TouchType.UNHANDLED_TOUCH) {
+            onRangeChangedListener.onVisibleRangeChanged(frameStartInPercent, frameEndInPercent);
         }
         boolean isHorizontal = isHorizontalGesture(initialTouchX, initialTouchY, x, y);
 
         if (isHorizontal != isDragHorizontal) {
             isDragHorizontal = isHorizontal;
-            periodChangedListener.onDragDirectionChanged(isDragHorizontal);
+            onRangeChangedListener.onDragDirectionChanged(isDragHorizontal);
         }
     }
 
