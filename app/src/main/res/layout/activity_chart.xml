@@ -1,27 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/holo_blue_light"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:fillViewport="true">
 
-    <ru.vmochalov.vkchart.view.ChartView
-        android:id="@+id/chart"
+    <LinearLayout
+        android:id="@+id/chartContainer"
         android:layout_width="match_parent"
-        android:layout_height="200dp" />
-
-    <CheckBox
-        android:id="@+id/joinedCheckBox"
-        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Joined" />
+        android:orientation="vertical" />
 
-    <CheckBox
-        android:id="@+id/leftCheckBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Left" />
-
-</LinearLayout>
+</ScrollView>

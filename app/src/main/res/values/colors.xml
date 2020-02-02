@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <color name="darkThemeToolbar">#212d3b</color>
+    <color name="darkThemeStatusbar">#1A242e</color>
+    <color name="darkThemeChartBackground">#1d2733</color>
+    <color name="darkThemeLabelText">#506372</color>
+    <color name="darkThemeAxis">#202224</color>
+    <color name="darkSecondaryBackground">#ff1d2733</color>
+    <color name="darkSecondaryFrame">#ff2b4256</color>
+    <color name="darkSecondaryShadow">#a019212e</color>
+
+    <color name="lightThemeToolbar">#517da2</color>
+    <color name="lightThemeStatusbar">#426382</color>
+    <color name="lightThemeChartBackground">#ffffff</color>
+    <color name="lightThemeLabelText">#96a2aa</color>
+    <color name="lightThemeAxis">#e7e8e9</color>
+    <color name="lightSecondaryBackground">#ffffffff</color>
+    <color name="lightSecondaryFrame">#ffdbe7f0</color>
+    <color name="lightSecondaryShadow">#a0f5f8f9</color>
+
 </resources>
