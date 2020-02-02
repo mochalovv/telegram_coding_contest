@@ -84,6 +84,6 @@ class ChartParser {
                 }
             }
         }
-        return new Chart(xId, lineIds, abscissa, ordinates, labels, colors);
+        return new Chart(lineIds, abscissa, ordinates, labels, colors);
     }
 }
