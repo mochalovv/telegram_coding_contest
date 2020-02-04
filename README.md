@@ -11,15 +11,10 @@ https://t.me/contest/6 :
 >
 > The app should show 4 charts on one screen, based on the input data we will provide.
 
-#### Design
-https://t.me/contest/10 :
+#### Design & Animation by Telegram
+https://t.me/contest/7 & https://t.me/contest/10 :
 
-<img src="/docs/design_provided.png">
-
-#### Animation
-https://t.me/contest/7 :
-
-<img src="/docs/animation_provided.gif">
+<img src="/docs/design_provided.png">   <img src="/docs/animation_provided.gif">
 
 ### Result
 * The app won the 3rd prize on the contest! B)
@@ -27,14 +22,11 @@ https://t.me/contest/7 :
 * The app uses Android Framework libarary only. `Build.gradle` file has no dependencies at all.
 * The app satisfies the Android preferred requirement of having [60 fps](https://www.youtube.com/watch?v=CaMTIgxCSqU) when performing animations.
 
-#### App Screenshot
-<img src="/docs/design_implemented.png">
-
-#### App Animation
-<img src="/docs/animation_implemented.gif">
+#### Desing & Animation in the App
+<img src="/docs/design_implemented.png">   <img src="/docs/animation_implemented.gif">
 
 #### Feedback from Judges:
 > Fast app, working smoothly even on older devices. Unfortunately, it doesn't fully comply with the design guidelines provided for the contest.
 
 ### To Sum Up
-I'd like to thank Telegram for organizing such great contests. They allow developers to show off their coding skills as well as to acquire knowledge in areas which might be new for someone.
+I'd like to thank Telegram for organizing such great contests. They allow developers to show off their coding skills as well as to acquire knowledge in areas which might be new for them.
